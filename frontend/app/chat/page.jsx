@@ -1,10 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import ChatInput from "@/components/ChatInput";
+import ChatInput from "@/components/chat/chat-input.tsx";
 import { sendChatMessage } from "@/lib/api";
 import { useLanguage } from "@/lib/language-context";
-import MessageBubble from "@/components/chat/MessageBubble";
+import MessageBubble from "@/components/chat/MessageBubble.jsx";
 
 export default function ChatPage() {
   const [messages, setMessages] = useState([]);
