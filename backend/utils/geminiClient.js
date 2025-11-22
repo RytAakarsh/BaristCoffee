@@ -1,38 +1,59 @@
-const axios = require('axios');
+const axios = require("axios");
 
-const GEMINI_URL = 'https://generativelanguage.googleapis.com/v1beta1/models/gemini-1.5-flash:generateMessage';
+const MODEL = "models/gemini-2.5-flash";
+const GEMINI_URL = `https://generativelanguage.googleapis.com/v1/${MODEL}:generateContent`;
 
 async function getCoffeeAnswer(prompt) {
-  const systemPrompt = `You are Barist.AI — a coffee-only expert chatbot.\nYou must answer ONLY coffee-related questions: brewing, beans, roast levels, espresso, latte, cappuccino, equipment, recipes, and coffee history.\nIf user asks anything not related to coffee, reply exactly: \"I can only answer questions related to coffee ☕.\"`;
+  const systemPrompt = `
+You are Barist.AI — a coffee-only expert chatbot.
+
+OUTPUT RULES (IMPORTANT):
+- Your answer MUST be in plain text only.
+- Do NOT use **bold**, *italic*, __underline__, markdown symbols, bullet stars, headings, or lists.
+- Do NOT use asterisks (*) for formatting.
+- Write naturally in simple paragraphs.
+- Absolutely NO markdown formatting allowed.
+If user asks non-coffee questions reply exactly:
+"I can only answer questions related to coffee ☕."
+`;
 
   const body = {
-    // Adjust depending on API surface — this is a generic request body compatible with many Gemini endpoints
-    messages: [
-      { role: 'system', content: systemPrompt },
-      { role: 'user', content: prompt }
-    ],
-    temperature: 0.6,
-    maxOutputTokens: 600
+    contents: [
+      {
+        parts: [
+          { text: systemPrompt },
+          { text: prompt }
+        ]
+      }
+    ]
   };
 
   try {
     const res = await axios.post(GEMINI_URL, body, {
       headers: {
-        Authorization: `Bearer ${process.env.GOOGLE_API_KEY}`,
-        'Content-Type': 'application/json'
-      }
+        "x-goog-api-key": process.env.GOOGLE_API_KEY,
+        "Content-Type": "application/json",
+      },
     });
 
-    // The shape of the response may vary; we'll try common paths
-    const candidate = res.data?.candidates?.[0] || res.data?.outputs?.[0] || null;
-    if (!candidate) return 'Sorry, I could not generate an answer right now.';
+    let text =
+      res.data?.candidates?.[0]?.content?.parts?.[0]?.text ||
+      "Sorry, I could not generate an answer.";
 
-    // Try several places to get text
-    const text = candidate?.content?.parts?.[0] || candidate?.text || candidate?.message?.content || JSON.stringify(candidate);
+    // 🔥 FINAL SAFETY CLEANING — remove unwanted symbols
+    text = text
+      .replace(/\*\*/g, "")   // remove bold markers
+      .replace(/\*/g, "")     // remove list bullets
+      .replace(/_/g, "")      // remove italics/underline
+      .replace(/#/g, "")      // remove headings
+      .replace(/-/g, "")      // remove markdown list dashes
+      .trim();
+
     return text;
+
   } catch (err) {
-    console.error('Gemini error:', err.response?.data || err.message);
-    throw new Error('AI provider error');
+    console.error("Gemini error:", err.response?.data || err.message);
+    throw new Error("AI provider error");
   }
 }
 
