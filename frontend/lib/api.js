@@ -1,5 +1,5 @@
 // frontend/lib/api.js
-export const BACKEND_URL = "https://baristcoffeebackend.onrender.com/"; // your backend url
+export const BACKEND_URL = "https://baristcoffeebackend.onrender.com"; // your backend url
 
 // CHAT MESSAGE
 export async function sendChatMessage(message) {
