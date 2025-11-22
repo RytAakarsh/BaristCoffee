@@ -2,16 +2,17 @@
 
 import { useState } from 'react'
 import { useLanguage } from '@/lib/language-context'
+import { sendFeedback } from "@/lib/api";
 
 const BRAZIL_STATES = [
-  'AC', 'AL', 'AP', 'AM', 'BA', 'CE', 'DF', 'ES', 'GO', 'MA',
-  'MT', 'MS', 'MG', 'PA', 'PB', 'PR', 'PE', 'PI', 'RJ', 'RN',
-  'RS', 'RO', 'RR', 'SC', 'SP', 'SE', 'TO'
+  'AC','AL','AP','AM','BA','CE','DF','ES','GO','MA',
+  'MT','MS','MG','PA','PB','PR','PE','PI','RJ','RN',
+  'RS','RO','RR','SC','SP','SE','TO'
 ]
 
 const COUNTRIES = [
-  'United States', 'Canada', 'United Kingdom', 'Australia', 'Germany',
-  'France', 'Japan', 'Brazil', 'India', 'Mexico', 'Other'
+  'United States','Canada','United Kingdom','Australia','Germany',
+  'France','Japan','Brazil','India','Mexico','Other'
 ]
 
 export default function FeedbackForm({ rating, sessionId, onClose, onRatingChange }) {
@@ -42,7 +43,6 @@ export default function FeedbackForm({ rating, sessionId, onClose, onRatingChang
       cancel: 'Cancel',
       submit: 'Submit',
       submitting: 'Submitting...',
-      required: 'required',
       missingFields: 'Please fill in all required fields',
       thanks: 'Thanks for your feedback!',
       appreciation: 'We appreciate your input and will use it to improve',
@@ -64,7 +64,6 @@ export default function FeedbackForm({ rating, sessionId, onClose, onRatingChang
       cancel: 'Cancelar',
       submit: 'Enviar',
       submitting: 'Enviando...',
-      required: 'obrigatório',
       missingFields: 'Por favor, preencha todos os campos obrigatórios',
       thanks: 'Obrigado pelo seu feedback!',
       appreciation: 'Apreciamos sua contribuição e a usaremos para melhorar',
@@ -74,50 +73,54 @@ export default function FeedbackForm({ rating, sessionId, onClose, onRatingChang
 
   const t = translations[language as keyof typeof translations]
 
+  // -----------------------------
+  // ✔ FIXED handleSubmit function
+  // -----------------------------
   const handleSubmit = async (e) => {
     e.preventDefault()
     setError('')
-    
+
     if (!yearOfBirth || !sex || !country || (country === 'Brazil' && !state)) {
       setError(t.missingFields)
       return
     }
 
     setIsSubmitting(true)
-    
+
     try {
-      // Store feedback in localStorage instead of sending to API
       const feedbackData = {
-        sessionId,
         stars: rating,
         yearOfBirth: parseInt(yearOfBirth),
         sex,
         country,
         state: country === 'Brazil' ? state : null,
-        comments,
-        language,
-        createdAt: new Date().toISOString()
+        comments
       }
 
-      const allFeedback = JSON.parse(localStorage.getItem('barist-feedback') || '[]')
-      allFeedback.push(feedbackData)
-      localStorage.setItem('barist-feedback', JSON.stringify(allFeedback))
+      const res = await sendFeedback(feedbackData)
 
-      // Simulate submission delay for UX
-      await new Promise(resolve => setTimeout(resolve, 800))
-      
+      if (!res.ok) {
+        setError("Failed to submit feedback")
+        return
+      }
+
       setSubmitted(true)
+
       setTimeout(() => {
         onClose()
       }, 2000)
-    } catch (error) {
-      console.error('[v0] Feedback error:', error)
-      setError('Failed to save feedback')
+
+    } catch (err) {
+      console.error(err)
+      setError("Failed to submit feedback")
     } finally {
       setIsSubmitting(false)
     }
   }
 
+  // -----------------------------
+  // SUCCESS SCREEN
+  // -----------------------------
   if (submitted) {
     return (
       <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
@@ -136,21 +139,26 @@ export default function FeedbackForm({ rating, sessionId, onClose, onRatingChang
     )
   }
 
+  // -----------------------------
+  // FORM UI
+  // -----------------------------
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
       <div className="animate-slide-up bg-gradient-to-br from-card to-card/95 border border-primary/20 rounded-2xl p-8 max-w-sm w-full shadow-premium-lg max-h-[90vh] overflow-y-auto">
+        
         <h2 className="text-2xl font-serif font-bold text-foreground mb-6">
           {t.tellUs}
         </h2>
 
         <form onSubmit={handleSubmit} className="space-y-5">
-          {/* Rating stars */}
+
+          {/* Rating Stars */}
           <div>
             <label className="block text-sm font-bold text-foreground mb-3 uppercase tracking-wider">
               {t.rating} <span className="text-primary">{rating || '—'}/5</span>
             </label>
             <div className="flex gap-3 justify-center">
-              {[1, 2, 3, 4, 5].map((star) => (
+              {[1,2,3,4,5].map((star) => (
                 <button
                   key={star}
                   type="button"
@@ -158,17 +166,15 @@ export default function FeedbackForm({ rating, sessionId, onClose, onRatingChang
                   className={`text-3xl transition-all duration-300 hover:scale-110 ${
                     star <= (rating || 0) ? 'text-primary scale-110' : 'text-muted-foreground'
                   }`}
-                >
-                  ★
-                </button>
+                >★</button>
               ))}
             </div>
           </div>
 
-          {/* Year of birth */}
+          {/* Year */}
           <div>
             <label className="block text-sm font-medium text-foreground mb-2">
-              {t.yearOfBirth} <span className="text-destructive font-bold">*</span>
+              {t.yearOfBirth} <span className="text-destructive">*</span>
             </label>
             <input
               type="number"
@@ -177,7 +183,7 @@ export default function FeedbackForm({ rating, sessionId, onClose, onRatingChang
               placeholder={t.yearPlaceholder}
               min="1900"
               max={new Date().getFullYear()}
-              className="w-full px-4 py-2.5 border border-border/40 rounded-lg bg-input text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary transition-all"
+              className="w-full px-4 py-2.5 border rounded-lg bg-input text-sm focus:ring-2 focus:ring-primary"
               required
             />
           </div>
@@ -185,12 +191,12 @@ export default function FeedbackForm({ rating, sessionId, onClose, onRatingChang
           {/* Sex */}
           <div>
             <label className="block text-sm font-medium text-foreground mb-2">
-              {t.sex} <span className="text-destructive font-bold">*</span>
+              {t.sex} <span className="text-destructive">*</span>
             </label>
             <select
               value={sex}
               onChange={(e) => setSex(e.target.value)}
-              className="w-full px-4 py-2.5 border border-border/40 rounded-lg bg-input text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary transition-all"
+              className="w-full px-4 py-2.5 border rounded-lg bg-input text-sm focus:ring-2 focus:ring-primary"
               required
             >
               <option value="">{t.selectPlaceholder}</option>
@@ -203,18 +209,16 @@ export default function FeedbackForm({ rating, sessionId, onClose, onRatingChang
           {/* Country */}
           <div>
             <label className="block text-sm font-medium text-foreground mb-2">
-              {t.country} <span className="text-destructive font-bold">*</span>
+              {t.country} <span className="text-destructive">*</span>
             </label>
             <select
               value={country}
               onChange={(e) => setCountry(e.target.value)}
-              className="w-full px-4 py-2.5 border border-border/40 rounded-lg bg-input text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary transition-all"
+              className="w-full px-4 py-2.5 border rounded-lg bg-input text-sm focus:ring-2 focus:ring-primary"
               required
             >
               <option value="">{t.selectPlaceholder}</option>
-              {COUNTRIES.map((c) => (
-                <option key={c} value={c}>{c}</option>
-              ))}
+              {COUNTRIES.map((c) => <option key={c}>{c}</option>)}
             </select>
           </div>
 
@@ -222,18 +226,16 @@ export default function FeedbackForm({ rating, sessionId, onClose, onRatingChang
           {country === 'Brazil' && (
             <div>
               <label className="block text-sm font-medium text-foreground mb-2">
-                {t.state} <span className="text-destructive font-bold">*</span>
+                {t.state} <span className="text-destructive">*</span>
               </label>
               <select
                 value={state}
                 onChange={(e) => setState(e.target.value)}
-                className="w-full px-4 py-2.5 border border-border/40 rounded-lg bg-input text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary transition-all"
+                className="w-full px-4 py-2.5 border rounded-lg bg-input text-sm focus:ring-2 focus:ring-primary"
                 required
               >
                 <option value="">{t.selectPlaceholder}</option>
-                {BRAZIL_STATES.map((s) => (
-                  <option key={s} value={s}>{s}</option>
-                ))}
+                {BRAZIL_STATES.map((s) => <option key={s}>{s}</option>)}
               </select>
             </div>
           )}
@@ -248,32 +250,36 @@ export default function FeedbackForm({ rating, sessionId, onClose, onRatingChang
               onChange={(e) => setComments(e.target.value)}
               placeholder={t.commentPlaceholder}
               rows={3}
-              className="w-full px-4 py-2.5 border border-border/40 rounded-lg bg-input text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary transition-all resize-none"
+              className="w-full px-4 py-2.5 border rounded-lg bg-input text-sm resize-none focus:ring-2 focus:ring-primary"
             />
           </div>
 
+          {/* Error */}
           {error && (
             <div className="px-4 py-3 bg-destructive/10 border border-destructive/30 rounded-lg text-sm text-destructive font-medium">
               ⚠️ {error}
             </div>
           )}
 
+          {/* Buttons */}
           <div className="flex gap-3 pt-2">
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 px-4 py-2.5 text-sm font-medium border border-border/40 text-foreground hover:bg-muted/50 rounded-lg transition-all duration-300 hover:scale-105 active:scale-95"
+              className="flex-1 px-4 py-2.5 text-sm font-medium border rounded-lg hover:bg-muted/40"
             >
               {t.cancel}
             </button>
+
             <button
               type="submit"
               disabled={isSubmitting}
-              className="flex-1 px-4 py-2.5 text-sm font-semibold bg-gradient-to-r from-primary via-yellow-500 to-primary text-primary-foreground rounded-lg hover:shadow-premium transition-all duration-300 disabled:opacity-50 hover:scale-105 active:scale-95"
+              className="flex-1 px-4 py-2.5 text-sm font-semibold bg-primary text-primary-foreground rounded-lg hover:shadow-lg disabled:opacity-50"
             >
               {isSubmitting ? t.submitting : t.submit}
             </button>
           </div>
+
         </form>
       </div>
     </div>
