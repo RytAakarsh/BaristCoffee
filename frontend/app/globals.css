@@ -3,6 +3,12 @@
 
 @custom-variant dark (&:is(.dark *));
 
+
+html, body {
+  overflow-x: hidden;
+}
+
+
 :root {
   /* Changed from yellow to brown color scheme matching Barist.Ai logo */
   --background: #fafaf8;
