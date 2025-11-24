@@ -75,8 +75,8 @@ export default function Sidebar({
     {!user && (
       <div className="flex flex-col items-center justify-center flex-1 px-4 text-center mt-[200px]">
         <img src="/images/historyiconlogo.jpg" className="w-23 h-23 mb-2" />
-        <p className="text-sm text-muted-foreground">{t.signInToSave}</p>
-        <p className="text-xs text-muted-foreground mt-1">{t.noHistory}</p>
+        {/* <p className="text-sm text-muted-foreground">{t.signInToSave}</p>
+        <p className="text-xs text-muted-foreground mt-1">{t.noHistory}</p> */}
       </div>
     )}
 
@@ -134,7 +134,7 @@ export default function Sidebar({
         {!user ? (
           <div className="flex flex-col items-center justify-center flex-1 p-6 text-center">
             <img src="/images/historyiconlogo.jpg" className="w-24 h-24 mb-3" />
-            <p className="text-sm text-muted-foreground">{t.signInToSave}</p>
+            {/* <p className="text-sm text-muted-foreground">{t.signInToSave}</p> */}
           </div>
         ) : (
           <div className="flex-1 overflow-y-auto p-5">
