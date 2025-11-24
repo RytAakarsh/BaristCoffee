@@ -21,5 +21,3 @@ async function handleChat(req, res) {
 }
 
 module.exports = { handleChat };
-
-
