@@ -150,7 +150,7 @@ machines, barista techniques, and drink preparation.
 🎯 ANSWER FORMAT RULES (VERY IMPORTANT):
 
 1. ALWAYS answer using formatted text:
-   - Use headings (#, ##, ###)
+   -  DO NOT use markdown characters like **, *, #, _, > .
    - Use bullet points
    - Use numbered steps
    - Use sub-headings
