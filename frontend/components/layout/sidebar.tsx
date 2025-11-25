@@ -63,9 +63,15 @@ export default function Sidebar({
 
   {/* TOP – New Chat */}
   <div className="p-5 border-b border-border/30">
-    <button className="w-full px-4 py-3 bg-gradient-to-r from-primary to-primary/80 text-white rounded-lg font-semibold shadow hover:scale-105 transition">
-      ✨ {t.newChat}
-    </button>
+   <button
+  className="w-full px-4 py-3 bg-gradient-to-r from-primary to-primary/80 text-white rounded-lg font-semibold shadow hover:scale-105 transition"
+  onClick={() => {
+    window.location.reload();
+  }}
+>
+  ✨ {t.newChat}
+</button>
+
   </div>
 
   {/* CONTENT AREA (scrollable) */}
@@ -126,9 +132,15 @@ export default function Sidebar({
       {/* DESKTOP SIDEBAR */}
       <aside className="hidden lg:flex w-72 flex-col border-r border-border/40 bg-white">
         <div className="p-6 border-b border-border/30">
-          <button className="w-full px-4 py-3 bg-gradient-to-r from-primary to-primary/80 text-white rounded-lg font-semibold hover:scale-105 transition">
-            ✨ {t.newChat}
-          </button>
+          <button
+  className="w-full px-4 py-3 bg-gradient-to-r from-primary to-primary/80 text-white rounded-lg font-semibold hover:scale-105 transition"
+  onClick={() => {
+    window.location.reload();
+  }}
+>
+  ✨ {t.newChat}
+</button>
+
         </div>
 
         {!user ? (
