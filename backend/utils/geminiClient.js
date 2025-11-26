@@ -441,61 +441,65 @@
 
 const axios = require("axios");
 
-const MODEL = "models/gemini-2.5-flash-latest";
-const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/${MODEL}:streamGenerateContent`;
+// ✅ Correct latest stable model
+const MODEL = "gemini-2.0-flash";
+const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent`;
 
-let lastUserName = null;  
+async function getCoffeeAnswer(prompt, userName = null) {
 
-module.exports.getCoffeeAnswer = async function getCoffeeAnswer(prompt, userName = null) {
+  const systemPrompt = `
+You are Barist.Ai, an advanced AI expert in specialty coffee.
 
-  if (userName) lastUserName = userName;
+RULES:
+1. Coffee-related responses only. If question is unrelated say:
+   "I am specialized exclusively in specialty coffee. How can I help you within the coffee domain?"
 
-  const shortSystemPrompt = `
-You are Barist.Ai, a professional specialty coffee assistant.
-- Answer ONLY coffee-related questions.
-- Be clear, short, structured.
-- Use bullet points and numbered steps.
-- No markdown symbols.
-- Use grams, ml, Celsius.
-- If a question is non-coffee: reply politely that you only answer coffee questions.
-- If first response: ask for the user's name.
-${lastUserName ? `User name: ${lastUserName}` : ""}
+2. Accuracy first:
+   - No invented facts
+   - Use real measurements (grams, ml, Celsius)
+   - If unsure: say so
+
+3. Format:
+   Title
+   Short explanation
+   Bullet points
+   Numbered steps
+   Tips
+   (No markdown symbols like **, *, #, >)
+
+4. Personalization:
+   - First message must ask user’s name
+   - After user gives a name, address them personally
 `;
 
+  // 🏎️ Faster response performance tweaks
   const body = {
+    model: MODEL,
     generationConfig: {
-      temperature: 0.25,
-      maxOutputTokens: 320,  // Faster
+      maxOutputTokens: 350,   // Reduced for speed
+      temperature: 0.3,
     },
     contents: [
-      { role: "system", parts: [{ text: shortSystemPrompt }] },
-      { role: "user", parts: [{ text: prompt }] }
+      { role: "model", parts: [{ text: systemPrompt }] },
+      { role: "user", parts: [{ text: userName ? `User: ${userName}\n${prompt}` : prompt }] }
     ]
   };
 
   try {
-    const response = await axios({
-      method: "POST",
-      url: GEMINI_URL,
-      data: body,
+    const res = await axios.post(GEMINI_URL, body, {
       headers: {
         "x-goog-api-key": process.env.GOOGLE_API_KEY,
         "Content-Type": "application/json"
-      },
-      timeout: 12000 // fail fast if Google takes too long
+      }
     });
 
-    // Concatenate streaming chunks
-    let finalText = "";
-    response.data.forEach(chunk => {
-      const text = chunk?.candidates?.[0]?.content?.parts?.[0]?.text;
-      if (text) finalText += text;
-    });
-
-    return finalText || "I couldn't generate a valid response.";
-
+    return res?.data?.candidates?.[0]?.content?.parts?.[0]?.text
+      || "⚠️ Barist.Ai could not respond — please try again.";
+      
   } catch (err) {
-    console.error("🚨 Gemini Error:", err.response?.data || err.message);
-    return "⚠️ Barist.Ai is thinking a bit too long — please try again.";
+    console.error("Gemini API Error:", err.response?.data || err.message);
+    return "⚠️ Barist.Ai is thinking too long — please try again.";
   }
-};
+}
+
+module.exports = { getCoffeeAnswer };
