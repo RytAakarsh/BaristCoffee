@@ -216,6 +216,7 @@ const axios = require("axios");
 const MODEL = "models/gemini-2.5-flash";
 const GEMINI_URL = `https://generativelanguage.googleapis.com/v1/${MODEL}:generateContent`;
 
+
 async function getCoffeeAnswer(prompt, userName = null) {
 
   // --- SYSTEM PROMPT (Updated High-Accuracy Coffee Expert Rules) ---
