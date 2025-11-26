@@ -443,55 +443,63 @@ const axios = require("axios");
 const MODEL = "models/gemini-2.0-flash";
 const GEMINI_URL = `https://generativelanguage.googleapis.com/v1/${MODEL}:generateContent`;
 
-async function getCoffeeAnswer(prompt, userName = null) {
+let storedUserName = null; // 🔥 Memory: Saved once user provides name
 
-  const systemPrompt = `
+async function getCoffeeAnswer(prompt) {
+
+  // detect if user replied with a short name
+  if (!storedUserName && prompt.trim().split(" ").length <= 2 && prompt.length <= 15) {
+    storedUserName = prompt.trim();
+  }
+
+  const basePrompt = `
 You are Barist.Ai — an advanced AI expert in specialty coffee.
 
 RULES:
-1. Only respond to COFFEE-related queries.
-   If message is irrelevant respond:
+1. Only respond to COFFEE-related questions.
+   If message is unrelated reply:
    "I am specialized exclusively in specialty coffee. How can I help you within the coffee domain?"
 
-2. Response format:
-   - Title
-   - Short explanation
-   - Bullet points
-   - Numbered steps
-   - Tips
-   (NO markdown symbols like *, **, # or >)
+2. Format response as:
+   Title
+   Short explanation
+   Bullet points
+   Numbered brewing steps
+   Tips
+   (NO markdown like *, **, #)
 
 3. Use:
    - Celsius
    - Grams
    - ML
-   - Real extraction ratios
+   - Real brewing ratios
 
 4. Personalization:
-   - FIRST reply: Ask for user's name.
-   - After they give name, respond normally and call them by name.
+   - If no name is known yet: ask only ONCE — "Hello! What's your name?"
+   - If name is known: respond normally and call user by name.
+`;
 
-Do NOT repeat introduction after name is provided.
-  `;
+  // 🔥 Logic: If we still don’t have their name
+  let finalPrompt = "";
 
-  const conversation = [
-    {
-      role: "user",
-      parts: [{ text: systemPrompt }]
-    },
-    {
-      role: "user",
-      parts: [{ text: userName ? `Name: ${userName}\n${prompt}` : prompt }]
-    }
-  ];
+  if (!storedUserName) {
+    finalPrompt = `${basePrompt}\n\nUser message: "${prompt}"\n\nRespond: Ask for their name ONLY.`;
+  } else {
+    finalPrompt = `${basePrompt}\nUser name: ${storedUserName}\nUser question: ${prompt}\n\nRespond normally. Do NOT ask for name again.`;
+  }
 
   const body = {
     generationConfig: {
-      temperature: 0.2,
+      temperature: 0.3,
       maxOutputTokens: 500,
-      topP: 0.8
+      topP: 0.9,
     },
-    contents: conversation
+    contents: [
+      {
+        role: "user",
+        parts: [{ text: finalPrompt }]
+      }
+    ]
   };
 
   try {
@@ -500,7 +508,7 @@ Do NOT repeat introduction after name is provided.
         "x-goog-api-key": process.env.GOOGLE_API_KEY,
         "Content-Type": "application/json",
       },
-      timeout: 15000 // ⏩ prevents long hanging requests
+      timeout: 15000
     });
 
     return (
@@ -510,12 +518,7 @@ Do NOT repeat introduction after name is provided.
 
   } catch (err) {
     console.error("Gemini API Error:", err?.response?.data || err.message);
-    
-    if (err.code === "ECONNABORTED") {
-      return "⏳ The request took too long — please try again.";
-    }
-
-    return "⚠️ Barist.Ai is having trouble connecting. Try again.";
+    return "⚠️ Barist.Ai is having trouble connecting. Please try again.";
   }
 }
 
