@@ -440,80 +440,83 @@
 
 const axios = require("axios");
 
-const MODEL = "models/gemini-2.5-flash";
+const MODEL = "models/gemini-2.0-flash";
 const GEMINI_URL = `https://generativelanguage.googleapis.com/v1/${MODEL}:generateContent`;
 
-// Memory (simple)
-let conversationHistory = [];
-
 async function getCoffeeAnswer(prompt, userName = null) {
-  
-  // ✔ System prompt only ONCE, not every message
-  if (conversationHistory.length === 0) {
-    conversationHistory.push({
-      role: "system",
-      parts: [{
-        text: `
-You are Barist.Ai — a specialty coffee expert.
+
+  const systemPrompt = `
+You are Barist.Ai — an advanced AI expert in specialty coffee.
 
 RULES:
-- Only answer coffee-related questions.
-- If unrelated, respond: "I am specialized exclusively in specialty coffee."
-- Be accurate. No fake facts.
-- Use beginner-friendly, structured responses:
-  Title
-  Bullet points
-  Steps
-  Tips (no markdown symbols like *, #, **)
-- Include brew ratios, grams, ml, Celsius.
-- Ask name ONLY in the first response.
-- After name is provided, use it in responses.
-        `
-      }]
-    });
-  }
+1. Only respond to COFFEE-related queries.
+   If message is irrelevant respond:
+   "I am specialized exclusively in specialty coffee. How can I help you within the coffee domain?"
 
-  // User message appended to memory
-  conversationHistory.push({
-    role: "user",
-    parts: [{ text: userName ? `User ${userName}: ${prompt}` : prompt }]
-  });
+2. Response format:
+   - Title
+   - Short explanation
+   - Bullet points
+   - Numbered steps
+   - Tips
+   (NO markdown symbols like *, **, # or >)
 
-  // Request body
+3. Use:
+   - Celsius
+   - Grams
+   - ML
+   - Real extraction ratios
+
+4. Personalization:
+   - FIRST reply: Ask for user's name.
+   - After they give name, respond normally and call them by name.
+
+Do NOT repeat introduction after name is provided.
+  `;
+
+  const conversation = [
+    {
+      role: "user",
+      parts: [{ text: systemPrompt }]
+    },
+    {
+      role: "user",
+      parts: [{ text: userName ? `Name: ${userName}\n${prompt}` : prompt }]
+    }
+  ];
+
   const body = {
     generationConfig: {
-      temperature: 0.3,
-      maxOutputTokens: 450,     // Smaller = faster response
-      topP: 0.9,
+      temperature: 0.2,
+      maxOutputTokens: 500,
+      topP: 0.8
     },
-    contents: conversationHistory
+    contents: conversation
   };
 
   try {
     const res = await axios.post(GEMINI_URL, body, {
       headers: {
         "x-goog-api-key": process.env.GOOGLE_API_KEY,
-        "Content-Type": "application/json"
-      }
+        "Content-Type": "application/json",
+      },
+      timeout: 15000 // ⏩ prevents long hanging requests
     });
 
-    const reply =
+    return (
       res.data?.candidates?.[0]?.content?.parts?.[0]?.text ||
-      "Hmm… I couldn’t generate a response.";
-
-    // Save response in memory
-    conversationHistory.push({
-      role: "assistant",
-      parts: [{ text: reply }]
-    });
-
-    return reply;
+      "⚠️ I couldn't generate a response — try again."
+    );
 
   } catch (err) {
-    console.error("Gemini API Error:", err?.response?.data || err);
-    return "⚠️ Barist.Ai is having trouble connecting. Please try again.";
+    console.error("Gemini API Error:", err?.response?.data || err.message);
+    
+    if (err.code === "ECONNABORTED") {
+      return "⏳ The request took too long — please try again.";
+    }
+
+    return "⚠️ Barist.Ai is having trouble connecting. Try again.";
   }
 }
 
 module.exports = { getCoffeeAnswer };
-
