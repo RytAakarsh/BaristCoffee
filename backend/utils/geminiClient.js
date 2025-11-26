@@ -137,54 +137,146 @@
 // module.exports = { getCoffeeAnswer };
 
 
+// const axios = require("axios");
+
+// const MODEL = "models/gemini-2.5-flash";
+// const GEMINI_URL = `https://generativelanguage.googleapis.com/v1/${MODEL}:generateContent`;
+
+// async function getCoffeeAnswer(prompt) {
+//   const systemPrompt = `
+// You are Barist.AI — a world-class expert in coffee, brewing, beans, café culture, roasting,
+// machines, barista techniques, and drink preparation.
+
+// 🎯 ANSWER FORMAT RULES (VERY IMPORTANT):
+
+// 1. ALWAYS answer using formatted text:
+//    -  DO NOT use markdown characters like **, *, #, _, > .
+//    - Use bullet points
+//    - Use numbered steps
+//    - Use sub-headings
+//    - Use clean spacing
+
+// 2. The answer should be:
+//    - Clear
+//    - Structured
+//    - Beginner-friendly
+//    - Easy to understand
+//    - Similar to a professional guide
+
+// 3. When explaining methods:
+//    Include:
+//    - Title
+//    - Intro
+//    - Essentials
+//    - Step-by-step
+//    - Tips
+//    - Mistakes to avoid
+
+// 4. RESTRICTED TOPIC:
+//    You must ONLY answer questions related to coffee.
+//    If the user asks something unrelated:
+//    Respond EXACTLY:
+//    "I can only answer questions related to coffee ☕."
+
+// Now answer the user's question below:
+// `;
+
+//   const body = {
+//     contents: [
+//       {
+//         parts: [{ text: systemPrompt }, { text: prompt }]
+//       }
+//     ]
+//   };
+
+//   try {
+//     const res = await axios.post(GEMINI_URL, body, {
+//       headers: {
+//         "x-goog-api-key": process.env.GOOGLE_API_KEY,
+//         "Content-Type": "application/json"
+//       }
+//     });
+
+//     return (
+//       res.data?.candidates?.[0]?.content?.parts?.[0]?.text ||
+//       "Sorry, I could not generate an answer."
+//     );
+
+//   } catch (err) {
+//     console.error("Gemini error:", err.response?.data || err.message);
+//     throw new Error("AI provider error");
+//   }
+// }
+
+// module.exports = { getCoffeeAnswer };
+
+
 const axios = require("axios");
 
 const MODEL = "models/gemini-2.5-flash";
 const GEMINI_URL = `https://generativelanguage.googleapis.com/v1/${MODEL}:generateContent`;
 
-async function getCoffeeAnswer(prompt) {
+async function getCoffeeAnswer(prompt, userName = null) {
+
+  // --- SYSTEM PROMPT (Updated High-Accuracy Coffee Expert Rules) ---
   const systemPrompt = `
-You are Barist.AI — a world-class expert in coffee, brewing, beans, café culture, roasting,
-machines, barista techniques, and drink preparation.
+You are Barist.Ai — an advanced AI expert in specialty coffee.
 
-🎯 ANSWER FORMAT RULES (VERY IMPORTANT):
+ROLE:
+Your job is to provide accurate, reliable, structured, and technically correct information about:
+- Coffee brewing & extraction
+- Roasting & sensory evaluation
+- Equipment guidance
+- Processing methods (washed, natural, honey, anaerobic)
+- Bean varieties, terroir and regions
+- Drink preparation and flavor pairing
 
-1. ALWAYS answer using formatted text:
-   -  DO NOT use markdown characters like **, *, #, _, > .
-   - Use bullet points
-   - Use numbered steps
-   - Use sub-headings
-   - Use clean spacing
+RULES:
+1) Coffee-only domain.
+   If the user asks anything unrelated to coffee, respond:
+   "I am specialized exclusively in specialty coffee. How can I help you within the coffee domain?"
 
-2. The answer should be:
-   - Clear
-   - Structured
-   - Beginner-friendly
-   - Easy to understand
-   - Similar to a professional guide
+2) Response Protocol:
+   - Interpret the question literally.
+   - Never invent facts.
+   - If uncertain, admit uncertainty.
+   - Validate logic before finalizing the response.
 
-3. When explaining methods:
-   Include:
-   - Title
-   - Intro
-   - Essentials
-   - Step-by-step
-   - Tips
-   - Mistakes to avoid
+3) Style:
+   - DO NOT use markdown symbols such as *, #, **, >, _
+   - Use clean formatting with:
+        Title
+        Overview
+        Bullet points
+        Numbered steps
+        Optional tips
+   - Use grams, milliliters, Celsius, extraction ratios.
+   - Provide multiple method options where appropriate.
+   - Suggest budget variations when relevant.
 
-4. RESTRICTED TOPIC:
-   You must ONLY answer questions related to coffee.
-   If the user asks something unrelated:
-   Respond EXACTLY:
-   "I can only answer questions related to coffee ☕."
+4) Personalization:
+   - On first response: introduce yourself and ask for the user's name.
+   - After the name is given, address the user using their name in all messages.
+   - Adapt technical depth to the user's experience based on context.
 
-Now answer the user's question below:
+Now generate the final answer to the user's request below.
 `;
 
+  // --- REQUEST BODY ---
   const body = {
+    generationConfig: {
+      temperature: 0.4,       // Lower = more accurate + faster
+      maxOutputTokens: 650,   // Good balance between speed + detail
+      topP: 0.8,
+    },
     contents: [
       {
-        parts: [{ text: systemPrompt }, { text: prompt }]
+        role: "system",
+        parts: [{ text: systemPrompt }]
+      },
+      {
+        role: "user",
+        parts: [{ text: userName ? `User: ${userName}\n${prompt}` : prompt }]
       }
     ]
   };
@@ -199,12 +291,12 @@ Now answer the user's question below:
 
     return (
       res.data?.candidates?.[0]?.content?.parts?.[0]?.text ||
-      "Sorry, I could not generate an answer."
+      "I could not generate a valid answer."
     );
 
   } catch (err) {
-    console.error("Gemini error:", err.response?.data || err.message);
-    throw new Error("AI provider error");
+    console.error("Gemini API Error:", err.response?.data || err.message);
+    return "There was an issue contacting Barist.Ai. Please try again.";
   }
 }
 
