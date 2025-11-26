@@ -92,7 +92,7 @@ export default function Home() {
           <ChatInput onSendMessage={handleSendMessage} isLoading={isLoading} />
           <button
             onClick={() => setShowFeedback(true)}
-            className="w-full px-4 py-3 text-sm text-muted-foreground hover:text-primary transition hover:bg-primary/5"
+            className="w-full px-4 py-3 opacity-100 font-medium text-sm text-muted-foreground hover:text-primary transition hover:bg-primary/7 cursor-pointer"
           >
             {language === "en"
               ? "✨ End session & give feedback"

@@ -263,7 +263,7 @@ export default function Sidebar({
   <div className="flex-1 overflow-y-auto px-4 py-4">
     {!user ? (
       <div className="flex flex-col items-center justify-center h-full">
-        <img src="/images/historyiconlogo.jpg" className="w-20 h-20 opacity-90" />
+        <img src="/images/historyiconlogo.jpg" className="w-30 h-30 opacity-90" />
       </div>
     ) : (
       <>
@@ -325,7 +325,7 @@ export default function Sidebar({
   <div className="flex-1 overflow-y-auto px-4 py-4">
     {!user ? (
       <div className="flex flex-col items-center justify-center h-full">
-        <img src="/images/historyiconlogo.jpg" className="w-20 h-20 opacity-90" />
+        <img src="/images/historyiconlogo.jpg" className="w-25 h-25 opacity-90" />
       </div>
     ) : (
       <>

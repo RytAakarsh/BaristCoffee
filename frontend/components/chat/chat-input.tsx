@@ -53,7 +53,7 @@ export default function ChatInput({ onSendMessage, isLoading }) {
           disabled={isLoading || !input.trim()}
           className="text-primary hover:text-primary/70 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed hover:scale-110 active:scale-95 group-focus-within:text-primary"
         >
-          <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+          <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
             <path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5.951-1.429 5.951 1.429a1 1 0 001.169-1.409l-7-14z" />
           </svg>
         </button>
