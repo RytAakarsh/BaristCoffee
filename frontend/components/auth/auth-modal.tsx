@@ -649,117 +649,193 @@
 // }
 
 
-'use client'
+// 'use client'
 
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
-import { useLanguage } from '@/lib/language-context'
+// import { useState } from 'react'
+// import { useRouter } from 'next/navigation'
+// import { useLanguage } from '@/lib/language-context'
+
+// export default function AuthModal({ onClose }) {
+//   const router = useRouter()
+//   const [email, setEmail] = useState("")
+//   const [password, setPassword] = useState("")
+//   const [error, setError] = useState("")
+//   const [isLoading, setIsLoading] = useState(false)
+
+//   const ADMIN_EMAIL = "admincoffee@gmail.com"
+//   const ADMIN_PASSWORD = "admincoffee@123321"
+
+//   const translations = {
+//     en: {
+//       login: "Admin Login",
+//       email: "Email",
+//       password: "Password",
+//       submit: "Sign In",
+//       createAccount: "Authorized users only",
+//       invalid: "Invalid admin credentials",
+//     },
+//     pt: {
+//       login: "Login do Admin",
+//       email: "Email",
+//       password: "Senha",
+//       submit: "Entrar",
+//       createAccount: "Apenas usuários autorizados",
+//       invalid: "Credenciais inválidas",
+//     },
+//   }
+
+//   const { language } = useLanguage()
+//   const t = translations[language]
+
+//   const handleSubmit = (e) => {
+//     e.preventDefault()
+//     setError("")
+//     setIsLoading(true)
+
+//     if (email === ADMIN_EMAIL && password === ADMIN_PASSWORD) {
+//       localStorage.setItem("admin-auth", "granted")  // save admin status
+//       setIsLoading(false)
+//       onClose()                                       // close modal
+//       router.push("/admin")                           // go to dashboard
+//       return
+//     }
+
+//     setError(t.invalid)
+//     setIsLoading(false)
+//   }
+
+//   return (
+//     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+//       <div className="animate-slide-up bg-card border border-primary/20 rounded-2xl p-8 max-w-sm w-full shadow-xl">
+
+//         <div className="text-center mb-8">
+//           <h2 className="text-2xl font-serif font-bold text-foreground mb-2">
+//             {t.login}
+//           </h2>
+//           <p className="text-sm text-muted-foreground">{t.createAccount}</p>
+//         </div>
+
+//         <form onSubmit={handleSubmit} className="space-y-4 mb-6">
+//           <div>
+//             <label className="block text-sm font-medium text-foreground mb-2">{t.email}</label>
+//             <input
+//               type="email"
+//               value={email}
+//               onChange={(e) => setEmail(e.target.value)}
+//               className="w-full px-4 py-2 border border-border rounded-lg bg-input text-foreground"
+//               required
+//             />
+//           </div>
+
+//           <div>
+//             <label className="block text-sm font-medium text-foreground mb-2">{t.password}</label>
+//             <input
+//               type="password"
+//               value={password}
+//               onChange={(e) => setPassword(e.target.value)}
+//               className="w-full px-4 py-2 border border-border rounded-lg bg-input text-foreground"
+//               required
+//             />
+//           </div>
+
+//           {error && (
+//             <div className="px-4 py-3 bg-red-100 border border-red-300 rounded-lg text-sm text-red-700">
+//               ⚠ {error}
+//             </div>
+//           )}
+
+//           <button
+//             type="submit"
+//             disabled={isLoading}
+//             className="w-full px-4 py-3 bg-primary text-primary-foreground rounded-lg font-semibold"
+//           >
+//             {isLoading ? "..." : t.submit}
+//           </button>
+//         </form>
+
+//         <button
+//           onClick={onClose}
+//           className="w-full mt-2 text-sm text-muted-foreground hover:text-foreground"
+//         >
+//           ✕ Close
+//         </button>
+//       </div>
+//     </div>
+//   )
+// }
+
+
+
+
+"use client";
+
+import { useState } from "react";
+import { useRouter } from "next/navigation";
 
 export default function AuthModal({ onClose }) {
-  const router = useRouter()
-  const [email, setEmail] = useState("")
-  const [password, setPassword] = useState("")
-  const [error, setError] = useState("")
-  const [isLoading, setIsLoading] = useState(false)
+  const router = useRouter();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  const ADMIN_EMAIL = "admincoffee@gmail.com"
-  const ADMIN_PASSWORD = "admincoffee@123321"
-
-  const translations = {
-    en: {
-      login: "Admin Login",
-      email: "Email",
-      password: "Password",
-      submit: "Sign In",
-      createAccount: "Authorized users only",
-      invalid: "Invalid admin credentials",
-    },
-    pt: {
-      login: "Login do Admin",
-      email: "Email",
-      password: "Senha",
-      submit: "Entrar",
-      createAccount: "Apenas usuários autorizados",
-      invalid: "Credenciais inválidas",
-    },
-  }
-
-  const { language } = useLanguage()
-  const t = translations[language]
+  const ADMIN_EMAIL = "admincoffee@gmail.com";
+  const ADMIN_PASSWORD = "admincoffee@123321";
 
   const handleSubmit = (e) => {
-    e.preventDefault()
-    setError("")
-    setIsLoading(true)
+    e.preventDefault();
+    setError("");
+    setLoading(true);
 
     if (email === ADMIN_EMAIL && password === ADMIN_PASSWORD) {
-      localStorage.setItem("admin-auth", "granted")  // save admin status
-      setIsLoading(false)
-      onClose()                                       // close modal
-      router.push("/admin")                           // go to dashboard
-      return
+      localStorage.setItem("admin-auth", "true");
+      setLoading(false);
+      onClose();
+      router.push("/admin");
+      return;
     }
 
-    setError(t.invalid)
-    setIsLoading(false)
-  }
+    setError("Invalid login credentials");
+    setLoading(false);
+  };
 
   return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div className="animate-slide-up bg-card border border-primary/20 rounded-2xl p-8 max-w-sm w-full shadow-xl">
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
+      <div className="bg-white p-6 rounded-xl shadow-lg max-w-sm w-full">
+        <h2 className="text-xl font-bold mb-3">Admin Login</h2>
 
-        <div className="text-center mb-8">
-          <h2 className="text-2xl font-serif font-bold text-foreground mb-2">
-            {t.login}
-          </h2>
-          <p className="text-sm text-muted-foreground">{t.createAccount}</p>
-        </div>
+        <form onSubmit={handleSubmit} className="space-y-3">
+          <input
+            type="email"
+            placeholder="Email"
+            className="w-full border p-2 rounded"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+          />
 
-        <form onSubmit={handleSubmit} className="space-y-4 mb-6">
-          <div>
-            <label className="block text-sm font-medium text-foreground mb-2">{t.email}</label>
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="w-full px-4 py-2 border border-border rounded-lg bg-input text-foreground"
-              required
-            />
-          </div>
+          <input
+            type="password"
+            placeholder="Password"
+            className="w-full border p-2 rounded"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+          />
 
-          <div>
-            <label className="block text-sm font-medium text-foreground mb-2">{t.password}</label>
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="w-full px-4 py-2 border border-border rounded-lg bg-input text-foreground"
-              required
-            />
-          </div>
-
-          {error && (
-            <div className="px-4 py-3 bg-red-100 border border-red-300 rounded-lg text-sm text-red-700">
-              ⚠ {error}
-            </div>
-          )}
+          {error && <p className="text-red-600 text-sm">{error}</p>}
 
           <button
             type="submit"
-            disabled={isLoading}
-            className="w-full px-4 py-3 bg-primary text-primary-foreground rounded-lg font-semibold"
+            disabled={loading}
+            className="w-full bg-primary text-white py-2 rounded-lg"
           >
-            {isLoading ? "..." : t.submit}
+            {loading ? "Signing in..." : "Sign In"}
           </button>
         </form>
 
-        <button
-          onClick={onClose}
-          className="w-full mt-2 text-sm text-muted-foreground hover:text-foreground"
-        >
-          ✕ Close
+        <button onClick={onClose} className="w-full mt-3 text-sm text-gray-500">
+          ✖ Close
         </button>
       </div>
     </div>
-  )
+  );
 }

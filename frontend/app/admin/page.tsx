@@ -92,30 +92,52 @@
 // }
 
 
-'use client'
+// 'use client'
 
-import { useState, useEffect } from "react"
-import AdminLogin from "@/components/admin/admin-login"
-import AdminDashboard from "@/components/admin/admin-dashboard"
+// import { useState, useEffect } from "react"
+// import AdminLogin from "@/components/admin/admin-login"
+// import AdminDashboard from "@/components/admin/admin-dashboard"
+
+// export default function AdminPage() {
+//   const [isAuthenticated, setIsAuthenticated] = useState(false)
+
+//   useEffect(() => {
+//     const saved = localStorage.getItem("admin-auth")
+//     if (saved === "granted") {
+//       setIsAuthenticated(true)
+//     }
+//   }, [])
+
+//   const handleLogout = () => {
+//     localStorage.removeItem("admin-auth")
+//     setIsAuthenticated(false)
+//   }
+
+//   return isAuthenticated ? (
+//     <AdminDashboard token="local-admin" onLogout={handleLogout} />
+//   ) : (
+//     <AdminLogin onSuccess={() => setIsAuthenticated(true)} />
+//   )
+// }
+
+
+"use client";
+
+import { useEffect, useState } from "react";
+import AdminDashboard from "@/components/admin/admin-dashboard";
 
 export default function AdminPage() {
-  const [isAuthenticated, setIsAuthenticated] = useState(false)
+  const [allowed, setAllowed] = useState(false);
 
   useEffect(() => {
-    const saved = localStorage.getItem("admin-auth")
-    if (saved === "granted") {
-      setIsAuthenticated(true)
+    if (localStorage.getItem("admin-auth") === "true") {
+      setAllowed(true);
+    } else {
+      window.location.href = "/";
     }
-  }, [])
+  }, []);
 
-  const handleLogout = () => {
-    localStorage.removeItem("admin-auth")
-    setIsAuthenticated(false)
-  }
+  if (!allowed) return null;
 
-  return isAuthenticated ? (
-    <AdminDashboard token="local-admin" onLogout={handleLogout} />
-  ) : (
-    <AdminLogin onSuccess={() => setIsAuthenticated(true)} />
-  )
+  return <AdminDashboard />;
 }
