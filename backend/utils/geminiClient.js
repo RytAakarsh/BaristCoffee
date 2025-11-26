@@ -304,6 +304,74 @@
 // module.exports = { getCoffeeAnswer };
 
 
+// const axios = require("axios");
+
+// const MODEL = "models/gemini-2.5-flash";
+// const GEMINI_URL = `https://generativelanguage.googleapis.com/v1/${MODEL}:generateContent`;
+
+// async function getCoffeeAnswer(prompt, userName = null) {
+
+//   const systemPrompt = `
+// You are Barist.Ai, an expert in specialty coffee.
+
+// RULES:
+// - Only answer coffee-related topics.
+// - If user asks unrelated topics reply: 
+// "I am specialized exclusively in specialty coffee. How can I help you within the coffee domain?"
+// - No markdown symbols (*, _, >, #).
+// - Format responses with:
+//   Title
+//   Overview
+//   Bullet points
+//   Steps
+//   Tips
+// - Use grams, ml and Celsius.
+// - Provide multiple method options where appropriate.
+// - Ask the user's name on first response.
+// - After they provide it, address them by name in every response.
+// `;
+
+//   const finalQuery = userName
+//     ? `${systemPrompt}\n\nUser Name: ${userName}\n\nUser Question: ${prompt}`
+//     : `${systemPrompt}\n\nUser Question: ${prompt}`;
+
+//   const body = {
+//     model: MODEL, // NEW REQUIRED FIELD
+//     generationConfig: {
+//       maxOutputTokens: 650,
+//       temperature: 0.4,
+//       topP: 0.8,
+//     },
+//     contents: [
+//       {
+//         role: "user",
+//         parts: [{ text: finalQuery }]
+//       }
+//     ]
+//   };
+
+//   try {
+//     const res = await axios.post(GEMINI_URL, body, {
+//       headers: {
+//         "x-goog-api-key": process.env.GOOGLE_API_KEY,
+//         "Content-Type": "application/json"
+//       }
+//     });
+
+//     return (
+//       res.data?.candidates?.[0]?.content?.parts?.[0]?.text ||
+//       "I could not generate a valid answer."
+//     );
+
+//   } catch (err) {
+//     console.error("Gemini API Error:", err.response?.data || err.message);
+//     return "There was an issue contacting Barist.Ai. Please try again.";
+//   }
+// }
+
+// module.exports = { getCoffeeAnswer };
+
+
 const axios = require("axios");
 
 const MODEL = "models/gemini-2.5-flash";
@@ -312,40 +380,40 @@ const GEMINI_URL = `https://generativelanguage.googleapis.com/v1/${MODEL}:genera
 async function getCoffeeAnswer(prompt, userName = null) {
 
   const systemPrompt = `
-You are Barist.Ai, an expert in specialty coffee.
+You are Barist.Ai, an advanced AI expert in specialty coffee.
 
-RULES:
-- Only answer coffee-related topics.
-- If user asks unrelated topics reply: 
-"I am specialized exclusively in specialty coffee. How can I help you within the coffee domain?"
-- No markdown symbols (*, _, >, #).
-- Format responses with:
-  Title
-  Overview
-  Bullet points
-  Steps
-  Tips
-- Use grams, ml and Celsius.
-- Provide multiple method options where appropriate.
-- Ask the user's name on first response.
-- After they provide it, address them by name in every response.
+Core Rules:
+1. Coffee-only responses. If the question is unrelated to coffee reply:
+   "I am specialized exclusively in specialty coffee. How can I help you within the coffee domain?"
+
+2. Accuracy Priority:
+   - Do NOT invent facts.
+   - If unsure, say so.
+   - Apply real-world brewing parameters (grams, ML, Celsius).
+
+3. Tone:
+   - Clear, structured, beginner-friendly expert.
+   - Format using title → bullets → numbered steps → tips (NO markdown symbols like *, **, #)
+
+4. Personalization:
+   - First reply must ask the user’s name.
+   - After user responds, use their name in future replies.
 `;
 
-  const finalQuery = userName
-    ? `${systemPrompt}\n\nUser Name: ${userName}\n\nUser Question: ${prompt}`
-    : `${systemPrompt}\n\nUser Question: ${prompt}`;
-
   const body = {
-    model: MODEL, // NEW REQUIRED FIELD
     generationConfig: {
-      maxOutputTokens: 650,
       temperature: 0.4,
+      maxOutputTokens: 650,
       topP: 0.8,
     },
     contents: [
       {
+        role: "user", // REQUIRED FIX (System prompt now becomes a user message)
+        parts: [{ text: systemPrompt }]
+      },
+      {
         role: "user",
-        parts: [{ text: finalQuery }]
+        parts: [{ text: userName ? `User: ${userName}\n${prompt}` : prompt }]
       }
     ]
   };
@@ -354,18 +422,16 @@ RULES:
     const res = await axios.post(GEMINI_URL, body, {
       headers: {
         "x-goog-api-key": process.env.GOOGLE_API_KEY,
-        "Content-Type": "application/json"
-      }
+        "Content-Type": "application/json",
+      },
     });
 
-    return (
-      res.data?.candidates?.[0]?.content?.parts?.[0]?.text ||
-      "I could not generate a valid answer."
-    );
+    return res.data?.candidates?.[0]?.content?.parts?.[0]?.text || 
+      "Apologies — I couldn't generate a response. Please try again.";
 
   } catch (err) {
-    console.error("Gemini API Error:", err.response?.data || err.message);
-    return "There was an issue contacting Barist.Ai. Please try again.";
+    console.error("Gemini API Error:", err?.response?.data || err.message);
+    return "⚠️ Barist.Ai could not reach the server. Try again.";
   }
 }
 
