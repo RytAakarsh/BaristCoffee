@@ -402,7 +402,7 @@ Core Rules:
 
   const body = {
     generationConfig: {
-      temperature: 0.4,
+      temperature: 0.2,
       maxOutputTokens: 650,
       topP: 0.8,
     },
