@@ -372,67 +372,130 @@
 // module.exports = { getCoffeeAnswer };
 
 
+// const axios = require("axios");
+
+// const MODEL = "models/gemini-2.5-flash";
+// const GEMINI_URL = `https://generativelanguage.googleapis.com/v1/${MODEL}:generateContent`;
+
+// async function getCoffeeAnswer(prompt, userName = null) {
+
+//   const systemPrompt = `
+// You are Barist.Ai, an advanced AI expert in specialty coffee.
+
+// Core Rules:
+// 1. Coffee-only responses. If the question is unrelated to coffee reply:
+//    "I am specialized exclusively in specialty coffee. How can I help you within the coffee domain?"
+
+// 2. Accuracy Priority:
+//    - Do NOT invent facts.
+//    - If unsure, say so.
+//    - Apply real-world brewing parameters (grams, ML, Celsius).
+
+// 3. Tone:
+//    - Clear, structured, beginner-friendly expert.
+//    - Format using title → bullets → numbered steps → tips (NO markdown symbols like *, **, #)
+
+// 4. Personalization:
+//    - First reply must ask the user’s name.
+//    - After user responds, use their name in future replies.
+// `;
+
+//   const body = {
+//     generationConfig: {
+//       temperature: 0.2,
+//       maxOutputTokens: 650,
+//       topP: 0.8,
+//     },
+//     contents: [
+//       {
+//         role: "user", // REQUIRED FIX (System prompt now becomes a user message)
+//         parts: [{ text: systemPrompt }]
+//       },
+//       {
+//         role: "user",
+//         parts: [{ text: userName ? `User: ${userName}\n${prompt}` : prompt }]
+//       }
+//     ]
+//   };
+
+//   try {
+//     const res = await axios.post(GEMINI_URL, body, {
+//       headers: {
+//         "x-goog-api-key": process.env.GOOGLE_API_KEY,
+//         "Content-Type": "application/json",
+//       },
+//     });
+
+//     return res.data?.candidates?.[0]?.content?.parts?.[0]?.text || 
+//       "Apologies — I couldn't generate a response. Please try again.";
+
+//   } catch (err) {
+//     console.error("Gemini API Error:", err?.response?.data || err.message);
+//     return "⚠️ Barist.Ai could not reach the server. Try again.";
+//   }
+// }
+
+// module.exports = { getCoffeeAnswer };
+
+
+
 const axios = require("axios");
 
-const MODEL = "models/gemini-2.5-flash";
-const GEMINI_URL = `https://generativelanguage.googleapis.com/v1/${MODEL}:generateContent`;
+const MODEL = "models/gemini-2.5-flash-latest";
+const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/${MODEL}:streamGenerateContent`;
 
-async function getCoffeeAnswer(prompt, userName = null) {
+let lastUserName = null;  
 
-  const systemPrompt = `
-You are Barist.Ai, an advanced AI expert in specialty coffee.
+module.exports.getCoffeeAnswer = async function getCoffeeAnswer(prompt, userName = null) {
 
-Core Rules:
-1. Coffee-only responses. If the question is unrelated to coffee reply:
-   "I am specialized exclusively in specialty coffee. How can I help you within the coffee domain?"
+  if (userName) lastUserName = userName;
 
-2. Accuracy Priority:
-   - Do NOT invent facts.
-   - If unsure, say so.
-   - Apply real-world brewing parameters (grams, ML, Celsius).
-
-3. Tone:
-   - Clear, structured, beginner-friendly expert.
-   - Format using title → bullets → numbered steps → tips (NO markdown symbols like *, **, #)
-
-4. Personalization:
-   - First reply must ask the user’s name.
-   - After user responds, use their name in future replies.
+  const shortSystemPrompt = `
+You are Barist.Ai, a professional specialty coffee assistant.
+- Answer ONLY coffee-related questions.
+- Be clear, short, structured.
+- Use bullet points and numbered steps.
+- No markdown symbols.
+- Use grams, ml, Celsius.
+- If a question is non-coffee: reply politely that you only answer coffee questions.
+- If first response: ask for the user's name.
+${lastUserName ? `User name: ${lastUserName}` : ""}
 `;
 
   const body = {
     generationConfig: {
-      temperature: 0.2,
-      maxOutputTokens: 650,
-      topP: 0.8,
+      temperature: 0.25,
+      maxOutputTokens: 320,  // Faster
     },
     contents: [
-      {
-        role: "user", // REQUIRED FIX (System prompt now becomes a user message)
-        parts: [{ text: systemPrompt }]
-      },
-      {
-        role: "user",
-        parts: [{ text: userName ? `User: ${userName}\n${prompt}` : prompt }]
-      }
+      { role: "system", parts: [{ text: shortSystemPrompt }] },
+      { role: "user", parts: [{ text: prompt }] }
     ]
   };
 
   try {
-    const res = await axios.post(GEMINI_URL, body, {
+    const response = await axios({
+      method: "POST",
+      url: GEMINI_URL,
+      data: body,
       headers: {
         "x-goog-api-key": process.env.GOOGLE_API_KEY,
-        "Content-Type": "application/json",
+        "Content-Type": "application/json"
       },
+      timeout: 12000 // fail fast if Google takes too long
     });
 
-    return res.data?.candidates?.[0]?.content?.parts?.[0]?.text || 
-      "Apologies — I couldn't generate a response. Please try again.";
+    // Concatenate streaming chunks
+    let finalText = "";
+    response.data.forEach(chunk => {
+      const text = chunk?.candidates?.[0]?.content?.parts?.[0]?.text;
+      if (text) finalText += text;
+    });
+
+    return finalText || "I couldn't generate a valid response.";
 
   } catch (err) {
-    console.error("Gemini API Error:", err?.response?.data || err.message);
-    return "⚠️ Barist.Ai could not reach the server. Try again.";
+    console.error("🚨 Gemini Error:", err.response?.data || err.message);
+    return "⚠️ Barist.Ai is thinking a bit too long — please try again.";
   }
-}
-
-module.exports = { getCoffeeAnswer };
+};
