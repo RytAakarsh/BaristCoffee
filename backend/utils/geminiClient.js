@@ -211,73 +211,141 @@
 // module.exports = { getCoffeeAnswer };
 
 
+// const axios = require("axios");
+
+// const MODEL = "models/gemini-2.5-flash";
+// const GEMINI_URL = `https://generativelanguage.googleapis.com/v1/${MODEL}:generateContent`;
+
+
+// async function getCoffeeAnswer(prompt, userName = null) {
+
+//   // --- SYSTEM PROMPT (Updated High-Accuracy Coffee Expert Rules) ---
+//   const systemPrompt = `
+// You are Barist.Ai — an advanced AI expert in specialty coffee.
+
+// ROLE:
+// Your job is to provide accurate, reliable, structured, and technically correct information about:
+// - Coffee brewing & extraction
+// - Roasting & sensory evaluation
+// - Equipment guidance
+// - Processing methods (washed, natural, honey, anaerobic)
+// - Bean varieties, terroir and regions
+// - Drink preparation and flavor pairing
+
+// RULES:
+// 1) Coffee-only domain.
+//    If the user asks anything unrelated to coffee, respond:
+//    "I am specialized exclusively in specialty coffee. How can I help you within the coffee domain?"
+
+// 2) Response Protocol:
+//    - Interpret the question literally.
+//    - Never invent facts.
+//    - If uncertain, admit uncertainty.
+//    - Validate logic before finalizing the response.
+
+// 3) Style:
+//    - DO NOT use markdown symbols such as *, #, **, >, _
+//    - Use clean formatting with:
+//         Title
+//         Overview
+//         Bullet points
+//         Numbered steps
+//         Optional tips
+//    - Use grams, milliliters, Celsius, extraction ratios.
+//    - Provide multiple method options where appropriate.
+//    - Suggest budget variations when relevant.
+
+// 4) Personalization:
+//    - On first response: introduce yourself and ask for the user's name.
+//    - After the name is given, address the user using their name in all messages.
+//    - Adapt technical depth to the user's experience based on context.
+
+// Now generate the final answer to the user's request below.
+// `;
+
+//   // --- REQUEST BODY ---
+//   const body = {
+//     generationConfig: {
+//       temperature: 0.4,       // Lower = more accurate + faster
+//       maxOutputTokens: 650,   // Good balance between speed + detail
+//       topP: 0.8,
+//     },
+//     contents: [
+//       {
+//         role: "system",
+//         parts: [{ text: systemPrompt }]
+//       },
+//       {
+//         role: "user",
+//         parts: [{ text: userName ? `User: ${userName}\n${prompt}` : prompt }]
+//       }
+//     ]
+//   };
+
+//   try {
+//     const res = await axios.post(GEMINI_URL, body, {
+//       headers: {
+//         "x-goog-api-key": process.env.GOOGLE_API_KEY,
+//         "Content-Type": "application/json"
+//       }
+//     });
+
+//     return (
+//       res.data?.candidates?.[0]?.content?.parts?.[0]?.text ||
+//       "I could not generate a valid answer."
+//     );
+
+//   } catch (err) {
+//     console.error("Gemini API Error:", err.response?.data || err.message);
+//     return "There was an issue contacting Barist.Ai. Please try again.";
+//   }
+// }
+
+// module.exports = { getCoffeeAnswer };
+
+
 const axios = require("axios");
 
 const MODEL = "models/gemini-2.5-flash";
 const GEMINI_URL = `https://generativelanguage.googleapis.com/v1/${MODEL}:generateContent`;
 
-
 async function getCoffeeAnswer(prompt, userName = null) {
 
-  // --- SYSTEM PROMPT (Updated High-Accuracy Coffee Expert Rules) ---
   const systemPrompt = `
-You are Barist.Ai — an advanced AI expert in specialty coffee.
-
-ROLE:
-Your job is to provide accurate, reliable, structured, and technically correct information about:
-- Coffee brewing & extraction
-- Roasting & sensory evaluation
-- Equipment guidance
-- Processing methods (washed, natural, honey, anaerobic)
-- Bean varieties, terroir and regions
-- Drink preparation and flavor pairing
+You are Barist.Ai, an expert in specialty coffee.
 
 RULES:
-1) Coffee-only domain.
-   If the user asks anything unrelated to coffee, respond:
-   "I am specialized exclusively in specialty coffee. How can I help you within the coffee domain?"
-
-2) Response Protocol:
-   - Interpret the question literally.
-   - Never invent facts.
-   - If uncertain, admit uncertainty.
-   - Validate logic before finalizing the response.
-
-3) Style:
-   - DO NOT use markdown symbols such as *, #, **, >, _
-   - Use clean formatting with:
-        Title
-        Overview
-        Bullet points
-        Numbered steps
-        Optional tips
-   - Use grams, milliliters, Celsius, extraction ratios.
-   - Provide multiple method options where appropriate.
-   - Suggest budget variations when relevant.
-
-4) Personalization:
-   - On first response: introduce yourself and ask for the user's name.
-   - After the name is given, address the user using their name in all messages.
-   - Adapt technical depth to the user's experience based on context.
-
-Now generate the final answer to the user's request below.
+- Only answer coffee-related topics.
+- If user asks unrelated topics reply: 
+"I am specialized exclusively in specialty coffee. How can I help you within the coffee domain?"
+- No markdown symbols (*, _, >, #).
+- Format responses with:
+  Title
+  Overview
+  Bullet points
+  Steps
+  Tips
+- Use grams, ml and Celsius.
+- Provide multiple method options where appropriate.
+- Ask the user's name on first response.
+- After they provide it, address them by name in every response.
 `;
 
-  // --- REQUEST BODY ---
+  const finalQuery = userName
+    ? `${systemPrompt}\n\nUser Name: ${userName}\n\nUser Question: ${prompt}`
+    : `${systemPrompt}\n\nUser Question: ${prompt}`;
+
   const body = {
+    model: MODEL, // NEW REQUIRED FIELD
     generationConfig: {
-      temperature: 0.4,       // Lower = more accurate + faster
-      maxOutputTokens: 650,   // Good balance between speed + detail
+      maxOutputTokens: 650,
+      temperature: 0.4,
       topP: 0.8,
     },
     contents: [
       {
-        role: "system",
-        parts: [{ text: systemPrompt }]
-      },
-      {
         role: "user",
-        parts: [{ text: userName ? `User: ${userName}\n${prompt}` : prompt }]
+        parts: [{ text: finalQuery }]
       }
     ]
   };
