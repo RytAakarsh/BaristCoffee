@@ -584,96 +584,66 @@
 // module.exports = { getCoffeeAnswer };
 
 
+// 
+
 const axios = require("axios");
 
 const MODEL = "models/gemini-2.0-flash";
 const GEMINI_URL = `https://generativelanguage.googleapis.com/v1/${MODEL}:generateContent`;
 
-let userMemory = {}; // memory stored per session
+let storedUserName = null; // memory persists until backend restarts
 
-async function getCoffeeAnswer(prompt, sessionId) {
-
-  if (!sessionId) sessionId = "default";
-
-  // initialize session memory
-  if (!userMemory[sessionId]) {
-    userMemory[sessionId] = { name: null };
-  }
-
-  const currentUser = userMemory[sessionId];
-
-  // detect if user typed name
-  if (!currentUser.name && prompt.trim().split(" ").length <= 2 && prompt.length <= 15) {
-    currentUser.name = prompt.trim();
+async function getCoffeeAnswer(prompt) {
+  if (!storedUserName && prompt.trim().length <= 15 && !prompt.includes(" ")) {
+    storedUserName = prompt.trim();
   }
 
   const rules = `
-You are Barist.Ai — a friendly expert in specialty coffee.
+You are Barist.Ai — a premium specialty coffee assistant.
 
-RULES:
-- Only answer coffee-related questions.
-- If question is unrelated: reply "I specialize only in coffee ☕ — ask me something coffee-related."
-- Write in clean formatting:
+Rules:
+- ONLY answer coffee related questions.
+- If unrelated: respond with: "I only answer coffee-related questions ☕."
+- Tone: friendly expert.
+- Format response as:
+  
+  Title
+  Short intro sentence
+  Bullet list or numbered steps
+  Tips
 
-TITLE  
-Short Intro  
-Bullet points  
-Numbered brewing steps  
-Tips  
-
-Formatting rules:
-- Bold important text (use ** text here **)
-- No hashtags (#)
-- Use grams, ML, Celsius
-- Keep response friendly and helpful
+- Use: Celsius, grams, ML, brew ratios.
+- Name personalization:
+  - If name unknown → ask ONLY once: "Hello! What's your name?"
+  - If known → use name naturally in answers.
 `;
 
-  let finalPrompt = "";
-
-  // ask name ONCE
-  if (!currentUser.name) {
-    finalPrompt = `${rules}
-
-User message: "${prompt}"
-
-Your response:
-Ask politely for their name. DO NOT answer the question yet.`;
-  } else {
-    finalPrompt = `${rules}
-
-User name: ${currentUser.name}
-User question: ${prompt}
-
-Respond normally using their name.`;
-  }
-
-  const body = {
-    generationConfig: {
-      temperature: 0.4,
-      maxOutputTokens: 600,
-      topP: 0.95,
-    },
-    contents: [
-      { role: "user", parts: [{ text: finalPrompt }] }
-    ]
-  };
+  const finalPrompt = storedUserName
+    ? `${rules}\nUser name: ${storedUserName}\nUser question: ${prompt}`
+    : `${rules}\nUser message: ${prompt}\nRespond by ONLY asking for their name first.`;
 
   try {
+    const body = {
+      generationConfig: {
+        temperature: 0.3,
+        topP: 0.8,
+        maxOutputTokens: 600,
+      },
+      contents: [{ role: "user", parts: [{ text: finalPrompt }] }],
+    };
+
     const res = await axios.post(GEMINI_URL, body, {
       headers: {
         "x-goog-api-key": process.env.GOOGLE_API_KEY,
         "Content-Type": "application/json",
       },
-      timeout: 15000
+      timeout: 15000,
     });
 
-    return {
-      reply: res.data?.candidates?.[0]?.content?.parts?.[0]?.text || "⚠️ Couldn't generate response."
-    };
-
+    return res.data?.candidates?.[0]?.content?.parts?.[0]?.text || "⚠️ No response generated.";
   } catch (err) {
-    console.error("Gemini API Error:", err?.response?.data || err);
-    return { reply: "⚠️ Server error — try again." };
+    console.log("Gemini Error →", err?.response?.data || err.message);
+    return "⚠️ Error contacting Barist.AI — please try again.";
   }
 }
 
