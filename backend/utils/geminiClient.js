@@ -595,6 +595,84 @@
 
 //You are Barist.Ai — expert in premium specialty coffee.
 
+// const axios = require("axios");
+
+// const MODEL = "models/gemini-2.0-flash";
+// const GEMINI_URL = `https://generativelanguage.googleapis.com/v1/${MODEL}:generateContent`;
+
+// let storedUserName = null;
+
+// // Reset function (used when frontend refreshes)
+// function resetSession() {
+//   storedUserName = null;
+// }
+
+// async function getCoffeeAnswer(prompt) {
+
+//   if (!storedUserName && prompt.trim().length <= 15 && prompt.split(" ").length <= 2) {
+//     storedUserName = prompt.trim();
+//   }
+
+//   const systemPrompt = `
+// You are Barist.Ai, an advanced AI expert in specialty coffee.
+// Your role is to provide accurate, reliable, and technically grounded information on:
+// 	•	Roasting & sensory analysis
+// 	•	Brewing & extraction methods
+// 	•	Coffee processing (natural, washed, honey, etc.)
+// 	•	Terroir, varieties, and production
+// 	•	Pairing & flavor profiles
+// 	•	Equipment and market guidance
+
+
+
+// Rules:
+// - Only answer coffee-related queries.
+// - If message is NOT about coffee → reply "I only answer coffee-related questions ☕."
+// - Tone: friendly expert barista style.
+// - Format:
+//   Title
+//   Short intro
+//   Bullet points / numbered steps
+//   Method of preparation
+//   Tips
+
+// - Units: Celsius, grams, ml, proper brew ratios.
+// - Personalization:
+//    If NO name yet → ask ONLY once: "Hello i am Barist.Ai ! What's your name?"
+//    If name exists → use naturally.
+
+// NEVER ask name again after stored once.
+
+// `;
+
+//   const finalPrompt = storedUserName
+//     ? `${systemPrompt}\nUser: ${storedUserName}\nQuestion: ${prompt}`
+//     : `${systemPrompt}\nUser message: "${prompt}"\n→ Respond asking ONLY their name.`;
+
+
+//   try {
+//     const res = await axios.post(GEMINI_URL,
+//       {
+//         contents: [{ role: "user", parts: [{ text: finalPrompt }] }],
+//         generationConfig: { temperature: 0.35, maxOutputTokens: 600 }
+//       },
+//       {
+//         headers: {
+//           "Content-Type": "application/json",
+//           "x-goog-api-key": process.env.GOOGLE_API_KEY
+//         },
+//         timeout: 15000
+//       });
+
+//     return res.data?.candidates?.[0]?.content?.parts?.[0]?.text || "No response.";
+//   } catch {
+//     return "⚠️ Barist.Ai is temporarily unavailable.";
+//   }
+// }
+
+// module.exports = { getCoffeeAnswer, resetSession };
+
+
 const axios = require("axios");
 
 const MODEL = "models/gemini-2.0-flash";
@@ -602,55 +680,59 @@ const GEMINI_URL = `https://generativelanguage.googleapis.com/v1/${MODEL}:genera
 
 let storedUserName = null;
 
-// Reset function (used when frontend refreshes)
+// Reset memory when frontend session resets
 function resetSession() {
   storedUserName = null;
 }
 
 async function getCoffeeAnswer(prompt) {
+  
+  const cleanedPrompt = prompt.trim();
 
-  if (!storedUserName && prompt.trim().length <= 15 && prompt.split(" ").length <= 2) {
-    storedUserName = prompt.trim();
+  // Detect if this is likely a name
+  const isLikelyName = cleanedPrompt.length <= 15 && cleanedPrompt.split(" ").length <= 2;
+
+  // Store name only once
+  if (!storedUserName && isLikelyName) {
+    storedUserName = cleanedPrompt;
+
+    // Immediately return welcome response instead of coffee validation rule
+    return `Hello ${storedUserName} ☕ — great to meet you!  
+How may I assist you with coffee today?`;
   }
 
   const systemPrompt = `
-You are Barist.Ai, an advanced AI expert in specialty coffee.
-Your role is to provide accurate, reliable, and technically grounded information on:
-	•	Roasting & sensory analysis
-	•	Brewing & extraction methods
-	•	Coffee processing (natural, washed, honey, etc.)
-	•	Terroir, varieties, and production
-	•	Pairing & flavor profiles
-	•	Equipment and market guidance
-
-
+You are Barist.Ai — a professional specialty coffee assistant.
+You help with:
+- Brew methods (pour-over, espresso, Aeropress, cold brew, moka pot)
+- Coffee processing, beans, roasts, origins
+- Equipment guidance and extraction troubleshooting
+- Flavor profiles and sensory science
 
 Rules:
-- Only answer coffee-related queries.
-- If message is NOT about coffee → reply "I only answer coffee-related questions ☕."
-- Tone: friendly expert barista style.
-- Format:
-  Title
-  Short intro
-  Bullet points / numbered steps
-  Tips
+- ONLY answer questions related to coffee.
+- If unrelated: respond with "I only answer coffee-related questions ☕."
+- Tone: warm, professional, and confident — like a barista trainer.
+- Format response as:
 
-- Units: Celsius, grams, ml, proper brew ratios.
+Title
+Short intro sentence
+Steps / bullet points
+Tips
+
+- Use Celsius, grams, ML, and proper brew ratios.
 - Personalization:
-   If NO name yet → ask ONLY once: "Hello i am Barist.Ai ! What's your name?"
-   If name exists → use naturally.
-
-NEVER ask name again after stored once.
-
+  - If name is known, use it naturally in responses (not every message).
+  - NEVER ask for the name again after stored.
 `;
 
   const finalPrompt = storedUserName
-    ? `${systemPrompt}\nUser: ${storedUserName}\nQuestion: ${prompt}`
-    : `${systemPrompt}\nUser message: "${prompt}"\n→ Respond asking ONLY their name.`;
-
+    ? `${systemPrompt}\nUser: ${storedUserName}\nQuestion: ${cleanedPrompt}`
+    : `${systemPrompt}\nUser message: "${cleanedPrompt}"\nReply ONLY asking their name politely.`;
 
   try {
-    const res = await axios.post(GEMINI_URL,
+    const res = await axios.post(
+      GEMINI_URL,
       {
         contents: [{ role: "user", parts: [{ text: finalPrompt }] }],
         generationConfig: { temperature: 0.35, maxOutputTokens: 600 }
@@ -661,10 +743,11 @@ NEVER ask name again after stored once.
           "x-goog-api-key": process.env.GOOGLE_API_KEY
         },
         timeout: 15000
-      });
+      }
+    );
 
-    return res.data?.candidates?.[0]?.content?.parts?.[0]?.text || "No response.";
-  } catch {
+    return res.data?.candidates?.[0]?.content?.parts?.[0]?.text || "No response generated.";
+  } catch (err) {
     return "⚠️ Barist.Ai is temporarily unavailable.";
   }
 }
