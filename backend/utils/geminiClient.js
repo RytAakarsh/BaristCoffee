@@ -525,59 +525,155 @@
 // module.exports = { getCoffeeAnswer };
 
 
+// const axios = require("axios");
+
+// const MODEL = "models/gemini-2.0-flash";
+// const GEMINI_URL = `https://generativelanguage.googleapis.com/v1/${MODEL}:generateContent`;
+
+// let storedUserName = null;
+
+// async function getCoffeeAnswer(prompt) {
+
+//   if (!storedUserName && prompt.trim().length <= 15 && prompt.split(" ").length <= 2) {
+//     storedUserName = prompt.trim();
+//   }
+
+//   const systemPrompt = `
+// You are Barist.Ai — expert in specialty coffee.
+// Only answer coffee-related questions.
+
+// Format style:
+// Title
+// Short intro
+// Bullet points
+// Steps
+// Tips
+
+// No markdown symbols like *, **, #, _.
+// Use Celsius, grams, ml, ratios.
+// If unsure, say so.
+
+// Ask for name ONLY once. Use it afterward.
+// `;
+
+//   const finalPrompt = storedUserName
+//     ? `${systemPrompt}\nUser: ${storedUserName}\nQuestion: ${prompt}`
+//     : `${systemPrompt}\nUser message: "${prompt}"\nReply asking only their name.`;
+
+//   try {
+//     const res = await axios.post(GEMINI_URL,
+//       {
+//         contents: [{ role: "user", parts: [{ text: finalPrompt }] }],
+//         generationConfig: { temperature: 0.35, maxOutputTokens: 550 }
+//       },
+//       {
+//         headers: {
+//           "Content-Type": "application/json",
+//           "x-goog-api-key": process.env.GOOGLE_API_KEY
+//         },
+//         timeout: 15000
+//       });
+
+//     return res.data?.candidates?.[0]?.content?.parts?.[0]?.text || "I couldn't generate a response.";
+
+//   } catch (err) {
+//     return "⚠️ Barist.Ai is temporarily unavailable.";
+//   }
+// }
+
+// module.exports = { getCoffeeAnswer };
+
+
 const axios = require("axios");
 
 const MODEL = "models/gemini-2.0-flash";
 const GEMINI_URL = `https://generativelanguage.googleapis.com/v1/${MODEL}:generateContent`;
 
-let storedUserName = null;
+let userMemory = {}; // memory stored per session
 
-async function getCoffeeAnswer(prompt) {
+async function getCoffeeAnswer(prompt, sessionId) {
 
-  if (!storedUserName && prompt.trim().length <= 15 && prompt.split(" ").length <= 2) {
-    storedUserName = prompt.trim();
+  if (!sessionId) sessionId = "default";
+
+  // initialize session memory
+  if (!userMemory[sessionId]) {
+    userMemory[sessionId] = { name: null };
   }
 
-  const systemPrompt = `
-You are Barist.Ai — expert in specialty coffee.
-Only answer coffee-related questions.
+  const currentUser = userMemory[sessionId];
 
-Format style:
-Title
-Short intro
-Bullet points
-Steps
-Tips
+  // detect if user typed name
+  if (!currentUser.name && prompt.trim().split(" ").length <= 2 && prompt.length <= 15) {
+    currentUser.name = prompt.trim();
+  }
 
-No markdown symbols like *, **, #, _.
-Use Celsius, grams, ml, ratios.
-If unsure, say so.
+  const rules = `
+You are Barist.Ai — a friendly expert in specialty coffee.
 
-Ask for name ONLY once. Use it afterward.
+RULES:
+- Only answer coffee-related questions.
+- If question is unrelated: reply "I specialize only in coffee ☕ — ask me something coffee-related."
+- Write in clean formatting:
+
+TITLE  
+Short Intro  
+Bullet points  
+Numbered brewing steps  
+Tips  
+
+Formatting rules:
+- Bold important text (use ** text here **)
+- No hashtags (#)
+- Use grams, ML, Celsius
+- Keep response friendly and helpful
 `;
 
-  const finalPrompt = storedUserName
-    ? `${systemPrompt}\nUser: ${storedUserName}\nQuestion: ${prompt}`
-    : `${systemPrompt}\nUser message: "${prompt}"\nReply asking only their name.`;
+  let finalPrompt = "";
+
+  // ask name ONCE
+  if (!currentUser.name) {
+    finalPrompt = `${rules}
+
+User message: "${prompt}"
+
+Your response:
+Ask politely for their name. DO NOT answer the question yet.`;
+  } else {
+    finalPrompt = `${rules}
+
+User name: ${currentUser.name}
+User question: ${prompt}
+
+Respond normally using their name.`;
+  }
+
+  const body = {
+    generationConfig: {
+      temperature: 0.4,
+      maxOutputTokens: 600,
+      topP: 0.95,
+    },
+    contents: [
+      { role: "user", parts: [{ text: finalPrompt }] }
+    ]
+  };
 
   try {
-    const res = await axios.post(GEMINI_URL,
-      {
-        contents: [{ role: "user", parts: [{ text: finalPrompt }] }],
-        generationConfig: { temperature: 0.35, maxOutputTokens: 550 }
+    const res = await axios.post(GEMINI_URL, body, {
+      headers: {
+        "x-goog-api-key": process.env.GOOGLE_API_KEY,
+        "Content-Type": "application/json",
       },
-      {
-        headers: {
-          "Content-Type": "application/json",
-          "x-goog-api-key": process.env.GOOGLE_API_KEY
-        },
-        timeout: 15000
-      });
+      timeout: 15000
+    });
 
-    return res.data?.candidates?.[0]?.content?.parts?.[0]?.text || "I couldn't generate a response.";
+    return {
+      reply: res.data?.candidates?.[0]?.content?.parts?.[0]?.text || "⚠️ Couldn't generate response."
+    };
 
   } catch (err) {
-    return "⚠️ Barist.Ai is temporarily unavailable.";
+    console.error("Gemini API Error:", err?.response?.data || err);
+    return { reply: "⚠️ Server error — try again." };
   }
 }
 
