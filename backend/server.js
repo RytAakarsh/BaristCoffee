@@ -98,7 +98,7 @@ const chatRoutes = require('./routes/chat');
 const feedbackRoutes = require('./routes/feedback');
 const adminRoutes = require('./routes/admin');
 const authRoutes = require('./routes/auth');
-const { getCoffeeAnswer, resetSession } = require("./geminiclient");
+const { getCoffeeAnswer, resetSession } = require("./utils/geminiClient");
 
 // reset on frontend refresh
 app.post("/reset-session", (req, res) => {
