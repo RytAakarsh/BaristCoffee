@@ -164,7 +164,7 @@ export default function FeedbackForm({ rating, sessionId, onClose, onRatingChang
                   type="button"
                   onClick={() => onRatingChange(star)}
                   className={`text-3xl transition-all duration-300 hover:scale-110 ${
-                    star <= (rating || 0) ? 'text-primary scale-110' : 'text-muted-foreground'
+                    star <= (rating || 0) ? 'text-amber-500 scale-110' : 'text-muted-foreground'
                   }`}
                 >★</button>
               ))}
