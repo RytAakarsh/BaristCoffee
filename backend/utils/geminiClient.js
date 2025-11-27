@@ -525,140 +525,6 @@
 // module.exports = { getCoffeeAnswer };
 
 
-const axios = require("axios");
-
-const MODEL = "models/gemini-2.0-flash";
-const GEMINI_URL = `https://generativelanguage.googleapis.com/v1/${MODEL}:generateContent`;
-
-let storedUserName = null;
-
-async function getCoffeeAnswer(prompt) {
-
-  if (!storedUserName && prompt.trim().length <= 15 && prompt.split(" ").length <= 2) {
-    storedUserName = prompt.trim();
-  }
-
-  const systemPrompt = `
-You are Barist.Ai — expert in specialty coffee.
-Only answer coffee-related questions.
-
-Format style:
-Title
-Short intro
-Bullet points
-Steps
-Tips
-
-Title
-  Short intro
-  Bullet list or numbered steps
-  Tips
-
-- Use Celsius, grams, ML.
-- Personalization:
-  - If no name stored → ask once: "Hello! What's your name?"
-  - If name known → use naturally.
-
-Use Celsius, grams, ml, ratios.
-If unsure, say so.
-
-Ask for name ONLY once. Use it afterward.
-`;
-
-  const finalPrompt = storedUserName
-    ? `${systemPrompt}\nUser: ${storedUserName}\nQuestion: ${prompt}`
-    : `${systemPrompt}\nUser message: "${prompt}"\nReply asking only their name.`;
-
-  try {
-    const res = await axios.post(GEMINI_URL,
-      {
-        contents: [{ role: "user", parts: [{ text: finalPrompt }] }],
-        generationConfig: { temperature: 0.35, maxOutputTokens: 550 }
-      },
-      {
-        headers: {
-          "Content-Type": "application/json",
-          "x-goog-api-key": process.env.GOOGLE_API_KEY
-        },
-        timeout: 15000
-      });
-
-    return res.data?.candidates?.[0]?.content?.parts?.[0]?.text || "I couldn't generate a response.";
-
-  } catch (err) {
-    return "⚠️ Barist.Ai is temporarily unavailable.";
-  }
-}
-
-module.exports = { getCoffeeAnswer };
-
-
-// 
-
-// const axios = require("axios");
-
-// const MODEL = "models/gemini-2.0-flash";
-// const GEMINI_URL = `https://generativelanguage.googleapis.com/v1/${MODEL}:generateContent`;
-
-// let storedUserName = null; // memory persists until backend restarts
-
-// async function getCoffeeAnswer(prompt) {
-//   if (!storedUserName && prompt.trim().length <= 15 && !prompt.includes(" ")) {
-//     storedUserName = prompt.trim();
-//   }
-
-//   const rules = `
-// You are Barist.Ai — a premium specialty coffee assistant.
-
-// Rules:
-// - ONLY answer coffee related questions.
-// - If unrelated: respond with: "I only answer coffee-related questions ☕."
-// - Tone: friendly expert.
-// - Format response as:
-  
-//   Title
-//   Short intro sentence
-//   Bullet list or numbered steps
-//   Tips
-
-// - Use: Celsius, grams, ML, brew ratios.
-// - Name personalization:
-//   - If name unknown → ask ONLY once: "Hello! What's your name?"
-//   - If known → use name naturally in answers.
-// `;
-
-//   const finalPrompt = storedUserName
-//     ? `${rules}\nUser name: ${storedUserName}\nUser question: ${prompt}`
-//     : `${rules}\nUser message: ${prompt}\nRespond by ONLY asking for their name first.`;
-
-//   try {
-//     const body = {
-//       generationConfig: {
-//         temperature: 0.3,
-//         topP: 0.8,
-//         maxOutputTokens: 600,
-//       },
-//       contents: [{ role: "user", parts: [{ text: finalPrompt }] }],
-//     };
-
-//     const res = await axios.post(GEMINI_URL, body, {
-//       headers: {
-//         "x-goog-api-key": process.env.GOOGLE_API_KEY,
-//         "Content-Type": "application/json",
-//       },
-//       timeout: 15000,
-//     });
-
-//     return res.data?.candidates?.[0]?.content?.parts?.[0]?.text || "⚠️ No response generated.";
-//   } catch (err) {
-//     console.log("Gemini Error →", err?.response?.data || err.message);
-//     return "⚠️ Error contacting Barist.AI — please try again.";
-//   }
-// }
-
-// module.exports = { getCoffeeAnswer };
-
-
 // const axios = require("axios");
 
 // const MODEL = "models/gemini-2.0-flash";
@@ -668,61 +534,128 @@ module.exports = { getCoffeeAnswer };
 
 // async function getCoffeeAnswer(prompt) {
 
-//   // Detect name only if no spaces & under 20 characters
-//   if (!storedUserName && prompt.trim().length < 20 && !prompt.includes(" ")) {
+//   if (!storedUserName && prompt.trim().length <= 15 && prompt.split(" ").length <= 2) {
 //     storedUserName = prompt.trim();
 //   }
 
 //   const systemPrompt = `
-// You are Barist.Ai — a premium specialty coffee assistant.
+// You are Barist.Ai — expert in specialty coffee.
+// Only answer coffee-related questions.
 
-// Rules:
-// ✔ Only respond to COFFEE-related questions.
-// ✔ If unrelated → reply: "I only answer coffee-related questions ☕."
-// ✔ Tone: friendly expert + short and helpful.
-// ✔ Use formatting: 
-//    • Title line 
-//    • Short intro 
-//    • Bullet points 
-//    • Numbered steps 
-//    • Tips section
-// ✔ Use ONLY grams, ML, Celsius, brew ratios.
-// ✔ Personalization:
-//    - If name not known → ask ONCE: "Hello! What's your name?"
-//    - If name known → greet user once & then answer normally.
-//   `;
+// Format style:
+// Title
+// Short intro
+// Bullet points
+// Steps
+// Tips
+
+// Title
+//   Short intro
+//   Bullet list or numbered steps
+//   Tips
+
+// - Use Celsius, grams, ML.
+// - Personalization:
+//   - If no name stored → ask once: "Hello! What's your name?"
+//   - If name known → use naturally.
+
+// Use Celsius, grams, ml, ratios.
+// If unsure, say so.
+
+// Ask for name ONLY once. Use it afterward.
+// `;
 
 //   const finalPrompt = storedUserName
-//     ? `${systemPrompt}\nUser name: ${storedUserName}\nUser question: ${prompt}\nRespond naturally without asking the name again.`
-//     : `${systemPrompt}\nUser message: ${prompt}\nONLY reply by asking for their name first.`;
-
+//     ? `${systemPrompt}\nUser: ${storedUserName}\nQuestion: ${prompt}`
+//     : `${systemPrompt}\nUser message: "${prompt}"\nReply asking only their name.`;
 
 //   try {
-//     const body = {
-//       generationConfig: {
-//         temperature: 0.3,
-//         maxOutputTokens: 600,
+//     const res = await axios.post(GEMINI_URL,
+//       {
+//         contents: [{ role: "user", parts: [{ text: finalPrompt }] }],
+//         generationConfig: { temperature: 0.35, maxOutputTokens: 550 }
 //       },
-//       contents: [{ role: "user", parts: [{ text: finalPrompt }] }],
-//     };
+//       {
+//         headers: {
+//           "Content-Type": "application/json",
+//           "x-goog-api-key": process.env.GOOGLE_API_KEY
+//         },
+//         timeout: 15000
+//       });
 
-//     const res = await axios.post(GEMINI_URL, body, {
-//       headers: {
-//         "x-goog-api-key": process.env.GOOGLE_API_KEY,
-//         "Content-Type": "application/json",
-//       },
-//       timeout: 15000,
-//     });
-
-//     return (
-//       res.data?.candidates?.[0]?.content?.parts?.[0]?.text ||
-//       "⚠️ Barist.Ai couldn't respond — try again."
-//     );
+//     return res.data?.candidates?.[0]?.content?.parts?.[0]?.text || "I couldn't generate a response.";
 
 //   } catch (err) {
-//     console.log("Gemini Error →", err?.response?.data || err.message);
-//     return "⚠️ Server issue — try again.";
+//     return "⚠️ Barist.Ai is temporarily unavailable.";
 //   }
 // }
 
 // module.exports = { getCoffeeAnswer };
+
+
+const axios = require("axios");
+
+const MODEL = "models/gemini-2.0-flash";
+const GEMINI_URL = `https://generativelanguage.googleapis.com/v1/${MODEL}:generateContent`;
+
+let storedUserName = null;
+
+// Reset function (used when frontend refreshes)
+function resetSession() {
+  storedUserName = null;
+}
+
+async function getCoffeeAnswer(prompt) {
+
+  if (!storedUserName && prompt.trim().length <= 15 && prompt.split(" ").length <= 2) {
+    storedUserName = prompt.trim();
+  }
+
+  const systemPrompt = `
+You are Barist.Ai — expert in premium specialty coffee.
+
+Rules:
+- Only answer coffee-related queries.
+- If message is NOT about coffee → reply "I only answer coffee-related questions ☕."
+- Tone: friendly expert barista style.
+- Format:
+  Title
+  Short intro
+  Bullet points / numbered steps
+  Tips
+
+- Units: Celsius, grams, ml, proper brew ratios.
+- Personalization:
+   If NO name yet → ask ONLY once: "Hello! What's your name?"
+   If name exists → use naturally.
+
+NEVER ask name again after stored once.
+
+`;
+
+  const finalPrompt = storedUserName
+    ? `${systemPrompt}\nUser: ${storedUserName}\nQuestion: ${prompt}`
+    : `${systemPrompt}\nUser message: "${prompt}"\n→ Respond asking ONLY their name.`;
+
+
+  try {
+    const res = await axios.post(GEMINI_URL,
+      {
+        contents: [{ role: "user", parts: [{ text: finalPrompt }] }],
+        generationConfig: { temperature: 0.35, maxOutputTokens: 600 }
+      },
+      {
+        headers: {
+          "Content-Type": "application/json",
+          "x-goog-api-key": process.env.GOOGLE_API_KEY
+        },
+        timeout: 15000
+      });
+
+    return res.data?.candidates?.[0]?.content?.parts?.[0]?.text || "No response.";
+  } catch {
+    return "⚠️ Barist.Ai is temporarily unavailable.";
+  }
+}
+
+module.exports = { getCoffeeAnswer, resetSession };
