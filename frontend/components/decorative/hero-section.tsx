@@ -29,16 +29,16 @@ export default function HeroSection() {
       {/* Right Content */}
       <div className="flex-1 flex flex-col justify-center space-y-6">
         <div>
-          <h1 className="text-3xl lg:text-5xl font-serif font-bold text-foreground mb-4 leading-tight">
+          <h1 className="text-3xl lg:text-5xl    text-foreground mb-4 leading-tight">
             {content.greeting}
           </h1>
 
-          <p className="text-base lg:text-lg text-muted-foreground leading-relaxed font-light max-w-lg">
+          <p className="text-base   lg:text-lg text-foreground leading-relaxed font-light max-w-lg">
             {content.description}
           </p>
         </div>
 
-        <p className="text-base font-medium text-foreground pt-4">
+        <p className="text-base   lg:text-lg font-medium text-foreground pt-4">
           {content.question}
         </p>
       </div>

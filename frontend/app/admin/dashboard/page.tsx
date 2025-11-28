@@ -151,7 +151,7 @@ export default function AdminDashboard({ token }) {
           </ResponsiveContainer>
         </Chart>
 
-        <Chart title="% by Brazilian States">
+        {/* <Chart title="% by Brazilian States">
           <ResponsiveContainer width="100%" height={270}>
             <PieChart>
               <Pie data={stateData} dataKey="value" nameKey="name" label>
@@ -160,7 +160,29 @@ export default function AdminDashboard({ token }) {
               <Tooltip />
             </PieChart>
           </ResponsiveContainer>
-        </Chart>
+        </Chart> */}
+
+        {/* % by Brazilian States (UPDATED BAR CHART) */}
+<Chart title="% by Brazilian States">
+  <ResponsiveContainer width="100%" height={300}>
+    <BarChart
+      data={[...stateData].sort((a, b) => b.value - a.value)} // Sort highest → lowest
+      layout="vertical"
+      margin={{ top: 10, right: 20, left: 40, bottom: 10 }}
+    >
+      <XAxis type="number" />
+      <YAxis dataKey="name" type="category" width={90} />
+      <Tooltip />
+      <Bar dataKey="value" fill="#8B4513">
+        {[...stateData].map((_, i) => (
+          <Cell key={i} fill={COLORS[i % COLORS.length]} />
+        ))}
+      </Bar>
+    </BarChart>
+  </ResponsiveContainer>
+</Chart>
+
+
       </div>
 
       {/* EXPORT BUTTONS */}
