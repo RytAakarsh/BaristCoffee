@@ -673,6 +673,91 @@
 // module.exports = { getCoffeeAnswer, resetSession };
 
 
+// const axios = require("axios");
+
+// const MODEL = "models/gemini-2.0-flash";
+// const GEMINI_URL = `https://generativelanguage.googleapis.com/v1/${MODEL}:generateContent`;
+
+// let storedUserName = null;
+
+// // Reset memory when frontend session resets
+// function resetSession() {
+//   storedUserName = null;
+// }
+
+// async function getCoffeeAnswer(prompt) {
+  
+//   const cleanedPrompt = prompt.trim();
+
+//   // Detect if this is likely a name
+//   const isLikelyName = cleanedPrompt.length <= 15 && cleanedPrompt.split(" ").length <= 2;
+
+//   // Store name only once
+//   if (!storedUserName && isLikelyName) {
+//     storedUserName = cleanedPrompt;
+
+//     // Immediately return welcome response instead of coffee validation rule
+//     return `Hello ${storedUserName} ☕ — great to meet you!  
+// How may I assist you with coffee today?`;
+//   }
+
+//   const systemPrompt = `
+// You are Barist.Ai — a professional specialty coffee assistant.
+// You help with:
+// - Brew methods (pour-over, espresso, Aeropress, cold brew, moka pot)
+// - Coffee processing, beans, roasts, origins
+// - Equipment guidance and extraction troubleshooting
+// - Flavor profiles and sensory science
+
+// Rules:
+// - ONLY answer questions related to coffee.
+// - If unrelated: respond with "I only answer coffee-related questions ☕."
+// - Tone: warm, professional, and confident — like a barista trainer.
+// - Format response as:
+
+// Title
+// Short intro sentence
+// Steps / bullet points
+// Detailed method of preparation
+// Tips
+
+
+// - Use Celsius, grams, ML, and proper brew ratios.
+// - Personalization:
+//   - If name is known, use it naturally in responses (not every message).
+//   - NEVER ask for the name again after stored.
+// `;
+
+//   const finalPrompt = storedUserName
+//     ? `${systemPrompt}\nUser: ${storedUserName}\nQuestion: ${cleanedPrompt}`
+//     : `${systemPrompt}\nUser message: "${cleanedPrompt}"\nReply ONLY asking their name politely.`;
+
+//   try {
+//     const res = await axios.post(
+//       GEMINI_URL,
+//       {
+//         contents: [{ role: "user", parts: [{ text: finalPrompt }] }],
+//         generationConfig: { temperature: 0.35, maxOutputTokens: 600 }
+//       },
+//       {
+//         headers: {
+//           "Content-Type": "application/json",
+//           "x-goog-api-key": process.env.GOOGLE_API_KEY
+//         },
+//         timeout: 15000
+//       }
+//     );
+
+//     return res.data?.candidates?.[0]?.content?.parts?.[0]?.text || "No response generated.";
+//   } catch (err) {
+//     return "⚠️ Barist.Ai is temporarily unavailable.";
+//   }
+// }
+
+// module.exports = { getCoffeeAnswer, resetSession };
+
+
+
 const axios = require("axios");
 
 const MODEL = "models/gemini-2.0-flash";
@@ -680,55 +765,64 @@ const GEMINI_URL = `https://generativelanguage.googleapis.com/v1/${MODEL}:genera
 
 let storedUserName = null;
 
-// Reset memory when frontend session resets
 function resetSession() {
   storedUserName = null;
 }
 
-async function getCoffeeAnswer(prompt) {
-  
+async function getCoffeeAnswer(prompt, language = "en") {
   const cleanedPrompt = prompt.trim();
-
-  // Detect if this is likely a name
   const isLikelyName = cleanedPrompt.length <= 15 && cleanedPrompt.split(" ").length <= 2;
 
-  // Store name only once
+  // Store username once and reply with welcome in correct language
   if (!storedUserName && isLikelyName) {
     storedUserName = cleanedPrompt;
 
-    // Immediately return welcome response instead of coffee validation rule
-    return `Hello ${storedUserName} ☕ — great to meet you!  
-How may I assist you with coffee today?`;
+    return language === "pt"
+      ? `Olá ${storedUserName} ☕ — muito bom te conhecer!\nComo posso te ajudar com café hoje?`
+      : `Hello ${storedUserName} ☕ — great to meet you!\nHow may I assist you with coffee today?`;
   }
+
+  const notCoffeeResponse =
+    language === "pt"
+      ? "☕ Eu só respondo perguntas relacionadas a café."
+      : "☕ I only answer coffee-related questions.";
 
   const systemPrompt = `
 You are Barist.Ai — a professional specialty coffee assistant.
+
+🌍 LANGUAGE RULE:
+- ALWAYS reply in this language: **${language}**
+- Never mix languages unless requested.
+
 You help with:
-- Brew methods (pour-over, espresso, Aeropress, cold brew, moka pot)
-- Coffee processing, beans, roasts, origins
-- Equipment guidance and extraction troubleshooting
-- Flavor profiles and sensory science
+- Brewing methods (espresso, moka pot, V60, cold brew, aeropress)
+- Flavor notes, origins, roast levels
+- Troubleshooting extraction and equipment guidance
 
-Rules:
-- ONLY answer questions related to coffee.
-- If unrelated: respond with "I only answer coffee-related questions ☕."
-- Tone: warm, professional, and confident — like a barista trainer.
-- Format response as:
+RULES:
+- If the question is NOT about coffee → reply: "${notCoffeeResponse}"
+- Tone: friendly and expert
+- Use Celsius, grams, ml and proper brew ratios.
 
-Title
-Short intro sentence
-Steps / bullet points
-Tips
+FORMAT STYLE:
+**Title**
+Short intro
+- bullet points or numbered method
+Tips section
 
-- Use Celsius, grams, ML, and proper brew ratios.
-- Personalization:
-  - If name is known, use it naturally in responses (not every message).
-  - NEVER ask for the name again after stored.
+Personalization:
+- If name exists, use sometimes but NOT every message.
+- Never ask for name again.
 `;
 
-  const finalPrompt = storedUserName
-    ? `${systemPrompt}\nUser: ${storedUserName}\nQuestion: ${cleanedPrompt}`
-    : `${systemPrompt}\nUser message: "${cleanedPrompt}"\nReply ONLY asking their name politely.`;
+  const finalPrompt = `
+SYSTEM:
+${systemPrompt}
+
+User Name: ${storedUserName || "unknown"}
+User Language: ${language}
+User Question: ${cleanedPrompt}
+`;
 
   try {
     const res = await axios.post(
@@ -741,14 +835,15 @@ Tips
         headers: {
           "Content-Type": "application/json",
           "x-goog-api-key": process.env.GOOGLE_API_KEY
-        },
-        timeout: 15000
+        }
       }
     );
 
-    return res.data?.candidates?.[0]?.content?.parts?.[0]?.text || "No response generated.";
+    return res.data?.candidates?.[0]?.content?.parts?.[0]?.text || "⚠️ No response.";
   } catch (err) {
-    return "⚠️ Barist.Ai is temporarily unavailable.";
+    return language === "pt"
+      ? "⚠️ O Barist.Ai está temporariamente indisponível."
+      : "⚠️ Barist.Ai is temporarily unavailable.";
   }
 }
 
