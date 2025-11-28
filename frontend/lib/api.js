@@ -64,15 +64,26 @@ async function safeFetch(url, options = {}) {
 
 // CHAT
 
-export async function sendChatMessage(message) {
+// export async function sendChatMessage(message) {
+//   const res = await fetch(`${BACKEND_URL}/chat`, {
+//     method: "POST",
+//     headers: { "Content-Type": "application/json" },
+//     body: JSON.stringify({ message }),
+//   });
+
+//   return res.json();
+// }
+
+export async function sendChatMessage(message, language) {
   const res = await fetch(`${BACKEND_URL}/chat`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ message }),
+    body: JSON.stringify({ message, language }),
   });
 
   return res.json();
 }
+
 
 
 

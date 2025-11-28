@@ -406,6 +406,133 @@
 // }
 
 
+// "use client";
+
+// import { useState, useRef, useEffect } from "react";
+// import ChatArea from "@/components/chat/chat-area";
+// import ChatInput from "@/components/chat/chat-input";
+// import Sidebar from "@/components/layout/sidebar";
+// import Header from "@/components/layout/header";
+// import FeedbackPanel from "@/components/feedback/feedback-panel";
+// import { useLanguage } from "@/lib/language-context";
+// import { useAuth } from "@/lib/auth-context";
+// import CoffeeElements from "@/components/decorative/coffee-elements";
+// import HeroSection from "@/components/decorative/hero-section";
+// import { sendChatMessage } from "@/lib/api";
+
+// export default function Home() {
+//   const { user } = useAuth();
+//   const { language } = useLanguage();
+
+//   const [messages, setMessages] = useState<any[]>([]);
+//   const [isLoading, setIsLoading] = useState(false);
+//   const [sessionId, setSessionId] = useState("");
+//   const [showFeedback, setShowFeedback] = useState(false);
+//   const [chatHistory, setChatHistory] = useState<any[]>([]);
+//   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+//   const chatEndRef = useRef<HTMLDivElement>(null);
+
+//   useEffect(() => {
+//     setSessionId(`session-${Date.now()}`);
+//     if (user) {
+//       const saved = localStorage.getItem(`history-${user.id}`);
+//       if (saved) setChatHistory(JSON.parse(saved));
+//     }
+//   }, [user]);
+
+
+
+
+
+//   // Reset backend memory when page loads
+//   const BACKEND_URL = "https://baristcoffeebackend.onrender.com";
+//   useEffect(() => {
+//     fetch(`${BACKEND_URL}/reset-session`, { method: "POST" });
+//     setMessages([]); // reset UI messages too
+//   }, []);
+
+//   const handleSendMessage = async (msg: string) => {
+//     if (!msg.trim()) return;
+
+//     setMessages(prev => [...prev, { id: Date.now(), text: msg, sender: "user" }]);
+//     setIsLoading(true);
+
+//     try {
+//       const response = await sendChatMessage(msg);
+//       const cleaned =
+//         typeof response === "string"
+//           ? response
+//           : response.reply || response.answer || JSON.stringify(response);
+
+//       setMessages(prev => [...prev, { id: Date.now() + 1, text: cleaned, sender: "bot" }]);
+//     } catch {
+//       setMessages(prev => [...prev, { id: Date.now() + 1, text: "⚠️ Error — try again.", sender: "bot" }]);
+//     }
+
+//     setIsLoading(false);
+//   };
+
+
+// useEffect(() => {
+//   if (messages.length > 0) {
+//     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
+//   }
+// }, [messages]);
+
+
+//   return (
+//     <div className="flex h-screen relative overflow-hidden">
+//       <CoffeeElements />
+
+//       <Sidebar
+//         user={user}
+//         history={chatHistory}
+//         onLoadFromHistory={(q) => handleSendMessage(q)}
+//         isOpen={mobileMenuOpen}
+//         setIsOpen={setMobileMenuOpen}
+//       />
+
+//       {mobileMenuOpen && (
+//         <div
+//           className="fixed inset-0 bg-black/30 z-40 lg:hidden"
+//           onClick={() => setMobileMenuOpen(false)}
+//         />
+//       )}
+
+//       <div className="flex-1 flex flex-col relative z-10">
+//         <Header isOpen={mobileMenuOpen} setIsOpen={setMobileMenuOpen} />
+
+//         <main className="flex-1  overflow-y-auto">
+//           {messages.length === 0 ? (
+//             <HeroSection />
+//           ) : (
+//             <ChatArea messages={messages} isLoading={isLoading} />
+//           )}
+//           <div ref={chatEndRef} />
+//         </main>
+
+//         <div className="border-t bg-white">
+//           <ChatInput onSendMessage={handleSendMessage} isLoading={isLoading} />
+//           <button
+//             onClick={() => setShowFeedback(true)}
+//             className="w-full py-3 text-white bg-[#704020] font-medium hover:bg-[#59301a]"
+//           >
+//            {language === "pt" 
+//              ? "✨ Encerrar sessão e enviar feedback" 
+//              : "✨ End session & give feedback"}
+//           </button>
+//         </div>
+//       </div>
+
+//       {showFeedback && (
+//         <FeedbackPanel onClose={() => setShowFeedback(false)} sessionId={sessionId} />
+//       )}
+//     </div>
+//   );
+// }
+
+
 "use client";
 
 import { useState, useRef, useEffect } from "react";
@@ -433,23 +560,11 @@ export default function Home() {
 
   const chatEndRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    setSessionId(`session-${Date.now()}`);
-    if (user) {
-      const saved = localStorage.getItem(`history-${user.id}`);
-      if (saved) setChatHistory(JSON.parse(saved));
-    }
-  }, [user]);
-
-
-
-
-
-  // Reset backend memory when page loads
   const BACKEND_URL = "https://baristcoffeebackend.onrender.com";
+
   useEffect(() => {
     fetch(`${BACKEND_URL}/reset-session`, { method: "POST" });
-    setMessages([]); // reset UI messages too
+    setMessages([]);
   }, []);
 
   const handleSendMessage = async (msg: string) => {
@@ -459,11 +574,8 @@ export default function Home() {
     setIsLoading(true);
 
     try {
-      const response = await sendChatMessage(msg);
-      const cleaned =
-        typeof response === "string"
-          ? response
-          : response.reply || response.answer || JSON.stringify(response);
+      const response = await sendChatMessage(msg, language);
+      const cleaned = typeof response === "string" ? response : response.reply || response.answer;
 
       setMessages(prev => [...prev, { id: Date.now() + 1, text: cleaned, sender: "bot" }]);
     } catch {
@@ -473,13 +585,9 @@ export default function Home() {
     setIsLoading(false);
   };
 
-
-useEffect(() => {
-  if (messages.length > 0) {
-    chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }
-}, [messages]);
-
+  useEffect(() => {
+    if (messages.length > 0) chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
 
   return (
     <div className="flex h-screen relative overflow-hidden">
@@ -493,34 +601,23 @@ useEffect(() => {
         setIsOpen={setMobileMenuOpen}
       />
 
-      {mobileMenuOpen && (
-        <div
-          className="fixed inset-0 bg-black/30 z-40 lg:hidden"
-          onClick={() => setMobileMenuOpen(false)}
-        />
-      )}
-
       <div className="flex-1 flex flex-col relative z-10">
         <Header isOpen={mobileMenuOpen} setIsOpen={setMobileMenuOpen} />
 
-        <main className="flex-1  overflow-y-auto">
-          {messages.length === 0 ? (
-            <HeroSection />
-          ) : (
-            <ChatArea messages={messages} isLoading={isLoading} />
-          )}
+        <main className="flex-1 overflow-y-auto">
+          {messages.length === 0 ? <HeroSection /> : <ChatArea messages={messages} isLoading={isLoading} />}
           <div ref={chatEndRef} />
         </main>
 
         <div className="border-t bg-white">
           <ChatInput onSendMessage={handleSendMessage} isLoading={isLoading} />
-          <button
-            onClick={() => setShowFeedback(true)}
-            className="w-full py-3 text-white bg-[#704020] font-medium hover:bg-[#59301a]"
+          <button className="w-full py-3 text-white bg-[#704020] font-medium hover:bg-[#59301a]"
+          onClick={() => setShowFeedback(true)}
           >
-           {language === "pt" 
-             ? "✨ Encerrar sessão e enviar feedback" 
-             : "✨ End session & give feedback"}
+          
+          
+          
+            {language === "pt" ? "✨ Encerrar sessão e enviar feedback" : "✨ End session & give feedback"}
           </button>
         </div>
       </div>
