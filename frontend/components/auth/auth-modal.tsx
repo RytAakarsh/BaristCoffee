@@ -779,8 +779,8 @@ export default function AuthModal({ onClose }) {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const ADMIN_EMAIL = "admincoffee@gmail.com";
-  const ADMIN_PASSWORD = "admincoffee@123321";
+  const ADMIN_EMAIL = "info@baristai.online";
+  const ADMIN_PASSWORD = "baristai@123321";
 
   const handleSubmit = (e) => {
     e.preventDefault();
