@@ -511,13 +511,14 @@ export default function Sidebar({
               )}
             </>
           )}
+           
         </div>
 
         {/* BOTTOM */}
-        <div className="border-t mb-9 ml-8 border-border/30 p-4">
+        <div className="border mb-9  border-border/30 p-4">
           <button
             onClick={() => setShowAuthModal(true)}
-            className="w-10 h-10 rounded-full bg-primary/20 hover:bg-primary/30 flex items-center justify-center text-primary"
+            className="w-10 ml-19 mb-9 h-10 rounded-full bg-primary/20 hover:bg-primary/30 flex items-center justify-center text-primary"
           >
             👤
           </button>
