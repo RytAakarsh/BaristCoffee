@@ -194,11 +194,195 @@
 // }
 
 
+// "use client";
+
+// import { useLanguage } from "@/lib/language-context";
+// import AuthModal from "@/components/auth/auth-modal";
+// import { useState } from "react";
+
+// interface ChatHistory {
+//   id: string;
+//   query: string;
+//   timestamp: number;
+// }
+
+// export default function Sidebar({
+//   user,
+//   history,
+//   onLoadFromHistory,
+//   isOpen,
+//   setIsOpen,
+// }: {
+//   user: any;
+//   history: ChatHistory[];
+//   onLoadFromHistory: (query: string) => void;
+//   isOpen?: boolean;
+//   setIsOpen?: (v: boolean) => void;
+// }) {
+//   const { language } = useLanguage();
+//   const [showAuthModal, setShowAuthModal] = useState(false);
+
+//   const t = {
+//     en: {
+//       recentSearches: "Recent Searches",
+//       noHistory: "Your search history will appear here",
+//       newChat: "New Chat",
+//     },
+//     pt: {
+//       recentSearches: "Pesquisas Recentes",
+//       noHistory: "Seu histórico de pesquisa aparecerá aqui",
+//       newChat: "Novo Chat",
+//     },
+//   }[language];
+
+//   const startNewChat = () => {
+//     window.location.href = "/";
+//   };
+
+//   return (
+//     <>
+//     {/* MOBILE SIDEBAR */}
+// <aside
+//   className={`lg:hidden fixed top-0 left-0 h-screen w-72 bg-white shadow-xl border-r border-border/40 z-50 transform transition-transform duration-300 flex flex-col ${
+//     isOpen ? "translate-x-0" : "-translate-x-full"
+//   }`}
+// >
+//   {/* TOP – New Chat */}
+//   <div className="p-5 border-b border-border/30">
+//     <button
+//       onClick={() => {
+//         window.location.href = "/"
+//       }}
+//       className="w-full px-4 py-3 bg-gradient-to-r from-primary to-primary/80 text-white rounded-lg font-semibold shadow hover:scale-105 transition"
+//     >
+//       ✨ {t.newChat}
+//     </button>
+//   </div>
+
+//   {/* CONTENT AREA */}
+//   <div className="flex-1 overflow-y-auto px-4 py-4">
+//     {!user ? (
+//       <div className="flex flex-col items-center justify-center h-full">
+//         <img src="/images/historyiconlogo.jpg" className="w-30 h-30 opacity-90" />
+//       </div>
+//     ) : (
+//       <>
+//         <h3 className="text-xs font-bold mb-3 flex items-center gap-2">
+//           <img src="/images/historyiconlogo.jpg" className="w-5 h-5" />
+//           {t.recentSearches}
+//         </h3>
+
+//         {history.length > 0 ? (
+//           <div className="space-y-2">
+//             {history
+//               .slice(-20)
+//               .reverse()
+//               .map((item) => (
+//                 <button
+//                   key={item.id}
+//                   onClick={() => {
+//                     onLoadFromHistory(item.query);
+//                     setIsOpen && setIsOpen(false);
+//                   }}
+//                   className="w-full px-4 py-3 text-left text-sm rounded-lg hover:bg-primary/10 transition border border-transparent hover:border-primary/30"
+//                 >
+//                   {item.query}
+//                 </button>
+//               ))}
+//           </div>
+//         ) : (
+//           <p className="text-xs text-muted-foreground text-center py-6">
+//             {t.noHistory}
+//           </p>
+//         )}
+//       </>
+//     )}
+//   </div>
+
+//   {/* BOTTOM BUTTON */}
+//   <div className="border-t mb-9 ml-8 border-border/30 p-4">
+//     <button
+//       onClick={() => setShowAuthModal(true)}
+//       className="w-10 h-10  rounded-full bg-primary/20 hover:bg-primary/30 flex items-center justify-center text-primary"
+//     >
+//       👤
+//     </button>
+//   </div>
+// </aside>
+
+//       {/* DESKTOP SIDEBAR */}
+//       <aside className="hidden lg:flex w-72 flex-col border-r border-border/40 bg-white">
+//         <div className="p-6 border-b border-border/30">
+//           <button
+//             onClick={startNewChat}
+//             className="w-full px-4 py-3 bg-primary text-white rounded-lg font-semibold hover:scale-105 transition"
+//           >
+//             ✨ {t.newChat}
+//           </button>
+//         </div>
+      
+//  {/* CONTENT AREA */}
+//   <div className="flex-1 overflow-y-auto px-4 py-4">
+//     {!user ? (
+//       <div className="flex flex-col items-center justify-center h-full">
+//         <img src="/images/historyiconlogo.jpg" className="w-25 h-25 opacity-90" />
+//       </div>
+//     ) : (
+//       <>
+//         <h3 className="text-xs font-bold mb-3 flex items-center gap-2">
+//           <img src="/images/historyiconlogo.jpg" className="w-5 h-5" />
+//           {t.recentSearches}
+//         </h3>
+
+//         {history.length > 0 ? (
+//           <div className="space-y-2">
+//             {history
+//               .slice(-20)
+//               .reverse()
+//               .map((item) => (
+//                 <button
+//                   key={item.id}
+//                   onClick={() => {
+//                     onLoadFromHistory(item.query);
+//                     setIsOpen && setIsOpen(false);
+//                   }}
+//                   className="w-full px-4 py-3 text-left text-sm rounded-lg hover:bg-primary/10 transition border border-transparent hover:border-primary/30"
+//                 >
+//                   {item.query}
+//                 </button>
+//               ))}
+//           </div>
+//         ) : (
+//           <p className="text-xs text-muted-foreground text-center py-6">
+//             {t.noHistory}
+//           </p>
+//         )}
+//       </>
+//     )}
+//   </div>
+
+//         {/* LOGIN BUTTON */}
+//         <div className="border-t border-border/30 p-4">
+//           <button
+//             onClick={() => setShowAuthModal(true)}
+//             className="w-10 h-10 rounded-full bg-primary/20 hover:bg-primary/30 flex items-center justify-center text-primary"
+//           >
+//             👤
+//           </button>
+//         </div>
+//       </aside>
+
+//       {showAuthModal && <AuthModal onClose={() => setShowAuthModal(false)} />}
+//     </>
+//   );
+// }
+
+
 "use client";
 
 import { useLanguage } from "@/lib/language-context";
 import AuthModal from "@/components/auth/auth-modal";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 interface ChatHistory {
   id: string;
@@ -239,78 +423,108 @@ export default function Sidebar({
     window.location.href = "/";
   };
 
+  /** 🔹 Close when clicking outside */
+  const handleOverlayClick = () => {
+    if (setIsOpen) setIsOpen(false);
+  };
+
+  /** 🔹 Close when pressing ESC */
+  useEffect(() => {
+    const closeOnEsc = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && setIsOpen) setIsOpen(false);
+    };
+
+    window.addEventListener("keydown", closeOnEsc);
+    return () => window.removeEventListener("keydown", closeOnEsc);
+  }, [setIsOpen]);
+
+  /** 🔹 Disable scroll while sidebar open */
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+  }, [isOpen]);
+
   return (
     <>
-    {/* MOBILE SIDEBAR */}
-<aside
-  className={`lg:hidden fixed top-0 left-0 h-screen w-72 bg-white shadow-xl border-r border-border/40 z-50 transform transition-transform duration-300 flex flex-col ${
-    isOpen ? "translate-x-0" : "-translate-x-full"
-  }`}
->
-  {/* TOP – New Chat */}
-  <div className="p-5 border-b border-border/30">
-    <button
-      onClick={() => {
-        window.location.href = "/"
-      }}
-      className="w-full px-4 py-3 bg-gradient-to-r from-primary to-primary/80 text-white rounded-lg font-semibold shadow hover:scale-105 transition"
-    >
-      ✨ {t.newChat}
-    </button>
-  </div>
+      {/* 🔥 BACKDROP OVERLAY */}
+      {isOpen && (
+        <div
+          onClick={handleOverlayClick}
+          className="lg:hidden fixed inset-0 bg-black/40 backdrop-blur-sm z-40 transition-opacity duration-300"
+        />
+      )}
 
-  {/* CONTENT AREA */}
-  <div className="flex-1 overflow-y-auto px-4 py-4">
-    {!user ? (
-      <div className="flex flex-col items-center justify-center h-full">
-        <img src="/images/historyiconlogo.jpg" className="w-30 h-30 opacity-90" />
-      </div>
-    ) : (
-      <>
-        <h3 className="text-xs font-bold mb-3 flex items-center gap-2">
-          <img src="/images/historyiconlogo.jpg" className="w-5 h-5" />
-          {t.recentSearches}
-        </h3>
+      {/* 📱 MOBILE SIDEBAR */}
+      <aside
+        className={`lg:hidden fixed top-0 left-0 h-screen w-72 bg-white shadow-xl border-r border-border/40 z-50 transform transition-transform duration-300 flex flex-col ${
+          isOpen ? "translate-x-0" : "-translate-x-full"
+        }`}
+      >
+        {/* TOP */}
+        <div className="p-5 border-b border-border/30">
+          <button
+            onClick={startNewChat}
+            className="w-full px-4 py-3 bg-gradient-to-r from-primary to-primary/80 text-white rounded-lg font-semibold shadow hover:scale-105 transition"
+          >
+            ✨ {t.newChat}
+          </button>
+        </div>
 
-        {history.length > 0 ? (
-          <div className="space-y-2">
-            {history
-              .slice(-20)
-              .reverse()
-              .map((item) => (
-                <button
-                  key={item.id}
-                  onClick={() => {
-                    onLoadFromHistory(item.query);
-                    setIsOpen && setIsOpen(false);
-                  }}
-                  className="w-full px-4 py-3 text-left text-sm rounded-lg hover:bg-primary/10 transition border border-transparent hover:border-primary/30"
-                >
-                  {item.query}
-                </button>
-              ))}
-          </div>
-        ) : (
-          <p className="text-xs text-muted-foreground text-center py-6">
-            {t.noHistory}
-          </p>
-        )}
-      </>
-    )}
-  </div>
+        {/* CONTENT */}
+        <div className="flex-1 overflow-y-auto px-4 py-4">
+          {!user ? (
+            <div className="flex flex-col items-center justify-center h-full">
+              <img src="/images/historyiconlogo.jpg" className="w-30 h-30 opacity-90" />
+            </div>
+          ) : (
+            <>
+              <h3 className="text-xs font-bold mb-3 flex items-center gap-2">
+                <img src="/images/historyiconlogo.jpg" className="w-5 h-5" />
+                {t.recentSearches}
+              </h3>
 
-  {/* BOTTOM BUTTON */}
-  <div className="border-t border-border/30 p-4">
-    <button
-      onClick={() => setShowAuthModal(true)}
-      className="w-10 h-10 rounded-full bg-primary/20 hover:bg-primary/30 flex items-center justify-center text-primary"
-    >
-      👤
-    </button>
-  </div>
-</aside>
+              {history.length > 0 ? (
+                <div className="space-y-2">
+                  {history
+                    .slice(-20)
+                    .reverse()
+                    .map((item) => (
+                      <button
+                        key={item.id}
+                        onClick={() => {
+                          onLoadFromHistory(item.query);
+                          setIsOpen && setIsOpen(false);
+                        }}
+                        className="w-full px-4 py-3 text-left text-sm rounded-lg hover:bg-primary/10 transition border border-transparent hover:border-primary/30"
+                      >
+                        {item.query}
+                      </button>
+                    ))}
+                </div>
+              ) : (
+                <p className="text-xs text-muted-foreground text-center py-6">
+                  {t.noHistory}
+                </p>
+              )}
+            </>
+          )}
+        </div>
 
-      {/* DESKTOP SIDEBAR */}
+        {/* BOTTOM */}
+        <div className="border-t mb-9 ml-8 border-border/30 p-4">
+          <button
+            onClick={() => setShowAuthModal(true)}
+            className="w-10 h-10 rounded-full bg-primary/20 hover:bg-primary/30 flex items-center justify-center text-primary"
+          >
+            👤
+          </button>
+        </div>
+      </aside>
+
+      {/* 💻 DESKTOP SIDEBAR */}
       <aside className="hidden lg:flex w-72 flex-col border-r border-border/40 bg-white">
         <div className="p-6 border-b border-border/30">
           <button
@@ -320,46 +534,46 @@ export default function Sidebar({
             ✨ {t.newChat}
           </button>
         </div>
-      
- {/* CONTENT AREA */}
-  <div className="flex-1 overflow-y-auto px-4 py-4">
-    {!user ? (
-      <div className="flex flex-col items-center justify-center h-full">
-        <img src="/images/historyiconlogo.jpg" className="w-25 h-25 opacity-90" />
-      </div>
-    ) : (
-      <>
-        <h3 className="text-xs font-bold mb-3 flex items-center gap-2">
-          <img src="/images/historyiconlogo.jpg" className="w-5 h-5" />
-          {t.recentSearches}
-        </h3>
 
-        {history.length > 0 ? (
-          <div className="space-y-2">
-            {history
-              .slice(-20)
-              .reverse()
-              .map((item) => (
-                <button
-                  key={item.id}
-                  onClick={() => {
-                    onLoadFromHistory(item.query);
-                    setIsOpen && setIsOpen(false);
-                  }}
-                  className="w-full px-4 py-3 text-left text-sm rounded-lg hover:bg-primary/10 transition border border-transparent hover:border-primary/30"
-                >
-                  {item.query}
-                </button>
-              ))}
-          </div>
-        ) : (
-          <p className="text-xs text-muted-foreground text-center py-6">
-            {t.noHistory}
-          </p>
-        )}
-      </>
-    )}
-  </div>
+        {/* CONTENT */}
+        <div className="flex-1 overflow-y-auto px-4 py-4">
+          {!user ? (
+            <div className="flex flex-col items-center justify-center h-full">
+              <img src="/images/historyiconlogo.jpg" className="w-25 h-25 opacity-90" />
+            </div>
+          ) : (
+            <>
+              <h3 className="text-xs font-bold mb-3 flex items-center gap-2">
+                <img src="/images/historyiconlogo.jpg" className="w-5 h-5" />
+                {t.recentSearches}
+              </h3>
+
+              {history.length > 0 ? (
+                <div className="space-y-2">
+                  {history
+                    .slice(-20)
+                    .reverse()
+                    .map((item) => (
+                      <button
+                        key={item.id}
+                        onClick={() => {
+                          onLoadFromHistory(item.query);
+                          setIsOpen && setIsOpen(false);
+                        }}
+                        className="w-full px-4 py-3 text-left text-sm rounded-lg hover:bg-primary/10 transition border border-transparent hover:border-primary/30"
+                      >
+                        {item.query}
+                      </button>
+                    ))}
+                </div>
+              ) : (
+                <p className="text-xs text-muted-foreground text-center py-6">
+                  {t.noHistory}
+                </p>
+              )}
+            </>
+          )}
+        </div>
 
         {/* LOGIN BUTTON */}
         <div className="border-t border-border/30 p-4">
@@ -376,5 +590,3 @@ export default function Sidebar({
     </>
   );
 }
-
-
