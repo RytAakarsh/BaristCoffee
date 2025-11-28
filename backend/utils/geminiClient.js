@@ -764,85 +764,111 @@ const MODEL = "models/gemini-2.0-flash";
 const GEMINI_URL = `https://generativelanguage.googleapis.com/v1/${MODEL}:generateContent`;
 
 let storedUserName = null;
+let storedLanguage = "en"; // default
 
 function resetSession() {
   storedUserName = null;
+  storedLanguage = "en";
 }
 
-async function getCoffeeAnswer(prompt, language = "en") {
-  const cleanedPrompt = prompt.trim();
-  const isLikelyName = cleanedPrompt.length <= 15 && cleanedPrompt.split(" ").length <= 2;
+async function getCoffeeAnswer(prompt) {
 
-  // Store username once and reply with welcome in correct language
+  const cleanedPrompt = prompt.trim();
+
+  // ---------- LANGUAGE DETECTION ----------
+  const portugueseWords = ["como", "que", "café", "tipos", "fazer", "preparo", "grãos", "qual"];
+  const englishWords = ["how", "what", "coffee", "types", "brew", "beans", "make"];
+
+  const isPortuguese =
+    portugueseWords.some(word => cleanedPrompt.toLowerCase().includes(word));
+
+  const isEnglish =
+    englishWords.some(word => cleanedPrompt.toLowerCase().includes(word));
+
+  if (isPortuguese) storedLanguage = "pt";
+  else if (isEnglish) storedLanguage = "en";
+
+  // ----- Detect if message is likely a NAME (only once) -----
+  const isLikelyName =
+    cleanedPrompt.length <= 12 &&
+    cleanedPrompt.split(" ").length <= 2 &&
+    !cleanedPrompt.toLowerCase().includes("?") &&
+    !portugueseWords.includes(cleanedPrompt.toLowerCase());
+
   if (!storedUserName && isLikelyName) {
     storedUserName = cleanedPrompt;
 
-    return language === "pt"
-      ? `Olá ${storedUserName} ☕ — muito bom te conhecer!\nComo posso te ajudar com café hoje?`
+    return storedLanguage === "pt"
+      ? `Olá ${storedUserName} ☕ — prazer em conhecê-lo!\nComo posso te ajudar com café hoje?`
       : `Hello ${storedUserName} ☕ — great to meet you!\nHow may I assist you with coffee today?`;
   }
 
-  const notCoffeeResponse =
-    language === "pt"
-      ? "☕ Eu só respondo perguntas relacionadas a café."
-      : "☕ I only answer coffee-related questions.";
-
+  // ---------- SYSTEM ROLE ----------
   const systemPrompt = `
-You are Barist.Ai — a professional specialty coffee assistant.
+You are Barist.Ai — a specialist in specialty coffee education.
 
-🌍 LANGUAGE RULE:
-- ALWAYS reply in this language: **${language}**
-- Never mix languages unless requested.
+Speak ONLY in the user's language:
+- If they are Portuguese → reply fully in Portuguese.
+- If they are English → reply fully in English.
 
-You help with:
-- Brewing methods (espresso, moka pot, V60, cold brew, aeropress)
-- Flavor notes, origins, roast levels
-- Troubleshooting extraction and equipment guidance
+Your expertise includes:
+- Brewing methods (espresso, V60, Aeropress, cold brew, moka)
+- Sensory science, roasting, extraction
+- Coffee equipment & troubleshooting
+- Bean origin and processing (washed, honey, natural)
 
-RULES:
-- If the question is NOT about coffee → reply: "${notCoffeeResponse}"
-- Tone: friendly and expert
-- Use Celsius, grams, ml and proper brew ratios.
+Rules:
+- ONLY answer coffee-related questions.
+- If message is unrelated → respond with:
+  English → "I only answer coffee-related questions ☕."
+  Portuguese → "Eu só respondo perguntas relacionadas a café ☕."
 
-FORMAT STYLE:
-**Title**
-Short intro
-- bullet points or numbered method
-Tips section
+Response style:
+- Title (bold)
+- Short introduction
+- Bullet points or numbered steps
+- Tips section
+- Use metrics: Celsius, grams, ml, brew ratios
 
 Personalization:
-- If name exists, use sometimes but NOT every message.
-- Never ask for name again.
+- If username exists, use occasionally (not every reply).
+
+IMPORTANT:
+Never ask for the user's name again once stored.
 `;
 
   const finalPrompt = `
-SYSTEM:
-${systemPrompt}
+Language: ${storedLanguage}
+User Name: ${storedUserName || "Unknown"}
+Message: "${cleanedPrompt}"
 
-User Name: ${storedUserName || "unknown"}
-User Language: ${language}
-User Question: ${cleanedPrompt}
+Respond following all system rules above.
 `;
 
   try {
     const res = await axios.post(
       GEMINI_URL,
       {
-        contents: [{ role: "user", parts: [{ text: finalPrompt }] }],
+        contents: [{ role: "user", parts: [{ text: `${systemPrompt}\n${finalPrompt}` }] }],
         generationConfig: { temperature: 0.35, maxOutputTokens: 600 }
       },
       {
         headers: {
           "Content-Type": "application/json",
           "x-goog-api-key": process.env.GOOGLE_API_KEY
-        }
+        },
+        timeout: 15000
       }
     );
 
-    return res.data?.candidates?.[0]?.content?.parts?.[0]?.text || "⚠️ No response.";
+    return res.data?.candidates?.[0]?.content?.parts?.[0]?.text || 
+      (storedLanguage === "pt"
+        ? "⚠️ Não consegui gerar uma resposta."
+        : "⚠️ I couldn't generate a response.");
+        
   } catch (err) {
-    return language === "pt"
-      ? "⚠️ O Barist.Ai está temporariamente indisponível."
+    return storedLanguage === "pt"
+      ? "⚠️ Barist.Ai está temporariamente indisponível."
       : "⚠️ Barist.Ai is temporarily unavailable.";
   }
 }
