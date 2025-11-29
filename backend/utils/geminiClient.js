@@ -876,16 +876,128 @@
 // module.exports = { getCoffeeAnswer, resetSession };
 
 
+// const axios = require("axios");
+
+// const MODEL = "models/gemini-2.0-flash";
+// const GEMINI_URL = `https://generativelanguage.googleapis.com/v1/${MODEL}:generateContent`;
+
+// let storedUserName = null;
+// let detectedLanguage = "en"; // default
+
+// function resetSession() {
+//   storedUserName = null;
+//   detectedLanguage = "en";
+// }
+
+// function detectLang(text) {
+//   const ptWords = ["como", "fazer", "fale", "sobre", "método", "café", "por favor"];
+//   const enWords = ["how", "make", "tell", "coffee", "method", "please"];
+
+//   const lower = text.toLowerCase();
+
+//   if (ptWords.some(w => lower.includes(w))) return "pt";
+//   if (enWords.some(w => lower.includes(w))) return "en";
+
+//   return detectedLanguage; 
+// }
+
+// async function getCoffeeAnswer(prompt) {
+//   const cleanedPrompt = prompt.trim();
+//   detectedLanguage = detectLang(cleanedPrompt);
+
+//   // 🔥 WELCOME MESSAGE BEFORE NAME IS GIVEN
+//   if (!storedUserName) {
+//     const isLikelyName = cleanedPrompt.length <= 15 && cleanedPrompt.split(" ").length <= 2;
+
+//     if (isLikelyName) {
+//       storedUserName = cleanedPrompt;
+
+//       return detectedLanguage === "pt"
+//         ? `Olá ${storedUserName} ☕ — prazer conhecer você!\nComo posso te ajudar com café hoje?`
+//         : `Hello ${storedUserName} ☕ — great to meet you!\nHow may I assist you with coffee today?`;
+//     }
+
+//     return detectedLanguage === "pt"
+//       ? "Olá! Sou o Barist.AI 😊 Qual é o seu nome?"
+//       : "Hello! I'm Barist.AI 😊 What's your name?";
+//   }
+
+//   // 🧠 SYSTEM PROMPT WITH LANGUAGE MODE
+//   const systemPrompt = detectedLanguage === "pt"
+//     ? `
+// Você é Barist.AI — especialista profissional em cafés especiais.
+
+// Regras:
+// - Responda SOMENTE perguntas relacionadas a café.
+// - Se a pergunta NÃO for sobre café → responda: "Eu só respondo perguntas sobre café ☕."
+// - Estilo: amigável, técnico e confiante, como um barista especialista.
+
+// Formato:
+// Título em negrito
+// Uma pequena introdução
+// Passos ou bullet points
+// Dicas finais
+
+// Use: Celsius, gramas, ML e proporções corretas.
+// Nome do usuário: ${storedUserName}
+// Pergunta: ${cleanedPrompt}
+// `
+//     : `
+// You are Barist.AI — a professional specialty coffee assistant.
+
+// Rules:
+// - ONLY answer coffee-related questions.
+// - If question is NOT about coffee → reply: "I only answer coffee-related questions ☕."
+// - Tone: warm, expert, confident — like a barista trainer.
+
+// Format:
+// Bold Title
+// Short intro
+// Steps or bullet points
+// Final tips
+
+// Use Celsius, grams, ML, proper brew ratios.
+// User name: ${storedUserName}
+// Question: ${cleanedPrompt}
+// `;
+
+//   try {
+//     const res = await axios.post(
+//       GEMINI_URL,
+//       {
+//         contents: [{ role: "user", parts: [{ text: systemPrompt }] }],
+//         generationConfig: { temperature: 0.3, maxOutputTokens: 650 }
+//       },
+//       {
+//         headers: {
+//           "Content-Type": "application/json",
+//           "x-goog-api-key": process.env.GOOGLE_API_KEY
+//         }
+//       }
+//     );
+
+//     return res.data?.candidates?.[0]?.content?.parts?.[0]?.text || "⚠️ No response.";
+//   } catch (err) {
+//     console.log("Gemini error:", err);
+//     return detectedLanguage === "pt"
+//       ? "⚠️ Erro ao conectar com Barist.AI — tente novamente."
+//       : "⚠️ Error connecting to Barist.AI — please try again.";
+//   }
+// }
+
+// module.exports = { getCoffeeAnswer, resetSession };
+
+
 const axios = require("axios");
 
 const MODEL = "models/gemini-2.0-flash";
 const GEMINI_URL = `https://generativelanguage.googleapis.com/v1/${MODEL}:generateContent`;
 
-let storedUserName = null;
+let firstMessageSent = false;
 let detectedLanguage = "en"; // default
 
 function resetSession() {
-  storedUserName = null;
+  firstMessageSent = false;
   detectedLanguage = "en";
 }
 
@@ -898,31 +1010,23 @@ function detectLang(text) {
   if (ptWords.some(w => lower.includes(w))) return "pt";
   if (enWords.some(w => lower.includes(w))) return "en";
 
-  return detectedLanguage; 
+  return detectedLanguage;
 }
 
 async function getCoffeeAnswer(prompt) {
   const cleanedPrompt = prompt.trim();
   detectedLanguage = detectLang(cleanedPrompt);
 
-  // 🔥 WELCOME MESSAGE BEFORE NAME IS GIVEN
-  if (!storedUserName) {
-    const isLikelyName = cleanedPrompt.length <= 15 && cleanedPrompt.split(" ").length <= 2;
-
-    if (isLikelyName) {
-      storedUserName = cleanedPrompt;
-
-      return detectedLanguage === "pt"
-        ? `Olá ${storedUserName} ☕ — prazer conhecer você!\nComo posso te ajudar com café hoje?`
-        : `Hello ${storedUserName} ☕ — great to meet you!\nHow may I assist you with coffee today?`;
-    }
+  // --- NEW LOGIC: FIRST USER MESSAGE ALWAYS TRIGGERS WELCOME ---
+  if (!firstMessageSent) {
+    firstMessageSent = true;
 
     return detectedLanguage === "pt"
-      ? "Olá! Sou o Barist.AI 😊 Qual é o seu nome?"
-      : "Hello! I'm Barist.AI 😊 What's your name?";
+      ? "Olá! Sou o Barist.AI 😊 Como posso te ajudar com café hoje?"
+      : "Hello! I'm Barist.AI 😊 How may I assist you with coffee today?";
   }
 
-  // 🧠 SYSTEM PROMPT WITH LANGUAGE MODE
+  // --- SYSTEM PROMPT (NO NAME FEATURE) ---
   const systemPrompt = detectedLanguage === "pt"
     ? `
 Você é Barist.AI — especialista profissional em cafés especiais.
@@ -933,14 +1037,14 @@ Regras:
 - Estilo: amigável, técnico e confiante, como um barista especialista.
 
 Formato:
-Título em negrito
-Uma pequena introdução
-Passos ou bullet points
-Dicas finais
+- Título em negrito
+- Introdução curta
+- Passos ou bullet points
+- Dicas finais
 
-Use: Celsius, gramas, ML e proporções corretas.
-Nome do usuário: ${storedUserName}
-Pergunta: ${cleanedPrompt}
+Use sempre Celsius, gramas, ML e proporções corretas.
+
+Pergunta do usuário: ${cleanedPrompt}
 `
     : `
 You are Barist.AI — a professional specialty coffee assistant.
@@ -948,17 +1052,17 @@ You are Barist.AI — a professional specialty coffee assistant.
 Rules:
 - ONLY answer coffee-related questions.
 - If question is NOT about coffee → reply: "I only answer coffee-related questions ☕."
-- Tone: warm, expert, confident — like a barista trainer.
+- Tone: warm, expert, confident — like a coffee trainer.
 
 Format:
-Bold Title
-Short intro
-Steps or bullet points
-Final tips
+- Bold title
+- Short intro
+- Steps or bullet points
+- Final tips
 
 Use Celsius, grams, ML, proper brew ratios.
-User name: ${storedUserName}
-Question: ${cleanedPrompt}
+
+User question: ${cleanedPrompt}
 `;
 
   try {
