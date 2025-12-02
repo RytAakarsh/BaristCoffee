@@ -1324,108 +1324,108 @@
 // module.exports = { getCoffeeAnswer, resetSession };
 
 
-// const axios = require("axios");
+const axios = require("axios");
 
-// const MODEL = "models/gemini-2.0-flash";
-// const GEMINI_URL = `https://generativelanguage.googleapis.com/v1/${MODEL}:generateContent`;
+const MODEL = "models/gemini-2.0-flash";
+const GEMINI_URL = `https://generativelanguage.googleapis.com/v1/${MODEL}:generateContent`;
 
-// let detectedLanguage = "en"; // default
+let detectedLanguage = "en"; // default
 
-// function resetSession() {
-//   detectedLanguage = "en";
-// }
+function resetSession() {
+  detectedLanguage = "en";
+}
 
-// function detectLang(text) {
-//   const ptWords = ["como", "fazer", "café", "preparo", "grãos", "moído", "água", "espresso", "filtro"];
-//   const enWords = ["how", "make", "coffee", "brew", "beans", "water", "grind", "espresso", "filter"];
+function detectLang(text) {
+  const ptWords = ["como", "fazer", "café", "preparo", "grãos", "moído", "água", "espresso", "filtro"];
+  const enWords = ["how", "make", "coffee", "brew", "beans", "water", "grind", "espresso", "filter"];
 
-//   const lower = text.toLowerCase();
+  const lower = text.toLowerCase();
 
-//   if (ptWords.some(w => lower.includes(w))) return "pt";
-//   if (enWords.some(w => lower.includes(w))) return "en";
+  if (ptWords.some(w => lower.includes(w))) return "pt";
+  if (enWords.some(w => lower.includes(w))) return "en";
 
-//   return detectedLanguage;
-// }
+  return detectedLanguage;
+}
 
-// async function getCoffeeAnswer(prompt) {
-//   const cleanedPrompt = prompt.trim();
-//   detectedLanguage = detectLang(cleanedPrompt);
+async function getCoffeeAnswer(prompt) {
+  const cleanedPrompt = prompt.trim();
+  detectedLanguage = detectLang(cleanedPrompt);
 
-//   // ----------------------------------------
-//   // ALWAYS PROCESS QUESTION DIRECTLY
-//   // ----------------------------------------
-//   const systemPrompt =
-//     detectedLanguage === "pt"
-//       ? `
-// <MAIN_INSTRUCTION>
-// Você é "Barista.Ai", assistente virtual especializado em cafés especiais. Sua missão é fornecer respostas detalhadas, precisas e otimizadas sobre o mundo do café.
+  // ----------------------------------------
+  // ALWAYS PROCESS QUESTION DIRECTLY
+  // ----------------------------------------
+  const systemPrompt =
+    detectedLanguage === "pt"
+      ? `
+<MAIN_INSTRUCTION>
+Você é "Barista.Ai", assistente virtual especializado em cafés especiais. Sua missão é fornecer respostas detalhadas, precisas e otimizadas sobre o mundo do café.
 
-// REGRAS:
-// - Responda SOMENTE perguntas sobre café.
-// - Se a pergunta NÃO for sobre café, responda EXATAMENTE: "Peço desculpas, mas sou especialista apenas em café ☕ e não tenho conhecimento sobre isso."
-// - Use sempre Celsius, gramas, ML e proporções corretas (ex.: 1:15).
-// - Seja direto, técnico, amigável e profissional.
-// - Não responda com conversas desnecessárias ou cumprimentos.
-// </MAIN_INSTRUCTION>
+REGRAS:
+- Responda SOMENTE perguntas sobre café.
+- Se a pergunta NÃO for sobre café, responda EXATAMENTE: "Peço desculpas, mas sou especialista apenas em café ☕ e não tenho conhecimento sobre isso."
+- Use sempre Celsius, gramas, ML e proporções corretas (ex.: 1:15).
+- Seja direto, técnico, amigável e profissional.
+- Não responda com conversas desnecessárias ou cumprimentos.
+</MAIN_INSTRUCTION>
 
-// <RESPONSE_FORMAT>
-// 1. **Título em negrito**
-// 2. Introdução curta
-// 3. Lista numerada ou bullet points
-// 4. Dica final
-// 5. Máximo de 3 emojis
-// </RESPONSE_FORMAT>
+<RESPONSE_FORMAT>
+1. **Título em negrito**
+2. Introdução curta
+3. Lista numerada ou bullet points
+4. Dica final
+5. Máximo de 3 emojis
+</RESPONSE_FORMAT>
 
-// Pergunta do usuário: ${cleanedPrompt}
-// `
-//       : `
-// <MAIN_INSTRUCTION>
-// You are "Barista.Ai", a virtual assistant specializing in specialty coffee. Your mission is to provide detailed, accurate, and optimized answers about the world of coffee.
+Pergunta do usuário: ${cleanedPrompt}
+`
+      : `
+<MAIN_INSTRUCTION>
+You are "Barista.Ai", a virtual assistant specializing in specialty coffee. Your mission is to provide detailed, accurate, and optimized answers about the world of coffee.
 
-// RULES:
-// - ONLY answer coffee-related questions.
-// - If question is NOT about coffee, reply EXACTLY: "I apologize, but I am a coffee expert ☕ and do not have knowledge about that."
-// - Always use Celsius, grams, ML, and proper brew ratios (e.g., 1:15).
-// - Be direct, informative, and professional.
-// - Avoid greetings or unnecessary conversation.
-// </MAIN_INSTRUCTION>
+RULES:
+- ONLY answer coffee-related questions.
+- If question is NOT about coffee, reply EXACTLY: "I apologize, but I am a coffee expert ☕ and do not have knowledge about that."
+- Always use Celsius, grams, ML, and proper brew ratios (e.g., 1:15).
+- Be direct, informative, and professional.
+- Avoid greetings or unnecessary conversation.
+</MAIN_INSTRUCTION>
 
-// <RESPONSE_FORMAT>
-// 1. **Bold descriptive title**
-// 2. One-sentence summary
-// 3. Numbered steps or bullet points
-// 4. Final short tip
-// 5. Maximum of 3 emojis
-// </RESPONSE_FORMAT>
+<RESPONSE_FORMAT>
+1. **Bold descriptive title**
+2. One-sentence summary
+3. Numbered steps or bullet points
+4. Final short tip
+5. Maximum of 3 emojis
+</RESPONSE_FORMAT>
 
-// User question: ${cleanedPrompt}
-// `;
+User question: ${cleanedPrompt}
+`;
 
-//   try {
-//     const res = await axios.post(
-//       GEMINI_URL,
-//       {
-//         contents: [{ role: "user", parts: [{ text: systemPrompt }] }],
-//         generationConfig: { temperature: 0.35, maxOutputTokens: 650 }
-//       },
-//       {
-//         headers: {
-//           "Content-Type": "application/json",
-//           "x-goog-api-key": process.env.GOOGLE_API_KEY
-//         }
-//       }
-//     );
+  try {
+    const res = await axios.post(
+      GEMINI_URL,
+      {
+        contents: [{ role: "user", parts: [{ text: systemPrompt }] }],
+        generationConfig: { temperature: 0.35, maxOutputTokens: 650 }
+      },
+      {
+        headers: {
+          "Content-Type": "application/json",
+          "x-goog-api-key": process.env.GOOGLE_API_KEY
+        }
+      }
+    );
 
-//     return res.data?.candidates?.[0]?.content?.parts?.[0]?.text || "⚠️ No response.";
-//   } catch (err) {
-//     console.log("Gemini error:", err);
-//     return detectedLanguage === "pt"
-//       ? "⚠️ Erro ao conectar com Barist.AI — tente novamente."
-//       : "⚠️ Error connecting to Barist.AI — please try again.";
-//   }
-// }
+    return res.data?.candidates?.[0]?.content?.parts?.[0]?.text || "⚠️ No response.";
+  } catch (err) {
+    console.log("Gemini error:", err);
+    return detectedLanguage === "pt"
+      ? "⚠️ Erro ao conectar com Barist.AI — tente novamente."
+      : "⚠️ Error connecting to Barist.AI — please try again.";
+  }
+}
 
-// module.exports = { getCoffeeAnswer, resetSession };
+module.exports = { getCoffeeAnswer, resetSession };
 
 
 // const axios = require("axios");
@@ -1542,116 +1542,118 @@
 
 // 
 
-const axios = require("axios");
+// const axios = require("axios");
 
-const MODEL = "models/gemini-2.0-flash";
-const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/${MODEL}:generateContent?key=${process.env.GOOGLE_API_KEY}`;
+// const MODEL = "models/gemini-2.0-flash";
+// const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/${MODEL}:generateContent?key=${process.env.GOOGLE_API_KEY}`;
 
-let detectedLanguage = "en";
+// let detectedLanguage = "en";
 
-// Reset language each new session
-function resetSession() {
-  detectedLanguage = "en";
-}
+// // Reset language each new session
+// function resetSession() {
+//   detectedLanguage = "en";
+// }
 
-// Better language detection
-function detectLang(text) {
-  const ptKeywords = ["como", "café", "preparo", "moído", "grãos", "água", "espresso", "filtrar", "cafeteira"];
-  const enKeywords = ["how", "make", "coffee", "brew", "water", "grind", "filter", "espresso", "beans"];
+// // Better language detection
+// function detectLang(text) {
+//   const ptKeywords = ["como", "café", "preparo", "moído", "grãos", "água", "espresso", "filtrar", "cafeteira"];
+//   const enKeywords = ["how", "make", "coffee", "brew", "water", "grind", "filter", "espresso", "beans"];
 
-  const lower = text.toLowerCase();
+//   const lower = text.toLowerCase();
 
-  if (ptKeywords.some(w => lower.includes(w))) return "pt";
-  if (enKeywords.some(w => lower.includes(w))) return "en";
+//   if (ptKeywords.some(w => lower.includes(w))) return "pt";
+//   if (enKeywords.some(w => lower.includes(w))) return "en";
 
-  return detectedLanguage;
-}
+//   return detectedLanguage;
+// }
 
-// Clean response to HTML for display
-function sanitizeResponse(text) {
-  if (!text) return "";
-  return text
-    .replace(/```[\s\S]*?```/g, "") 
-    .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
-    .replace(/\n\n/g, "<br/><br/>")
-    .replace(/\n/g, "<br/>")
-    .trim();
-}
+// // Clean response to HTML for display
+// function sanitizeResponse(text) {
+//   if (!text) return "";
+//   return text
+//     .replace(/```[\s\S]*?```/g, "") 
+//     .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
+//     .replace(/\n\n/g, "<br/><br/>")
+//     .replace(/\n/g, "<br/>")
+//     .trim();
+// }
 
-async function getCoffeeAnswer(prompt) {
-  const userText = prompt.trim();
-  detectedLanguage = detectLang(userText);
+// async function getCoffeeAnswer(prompt) {
+//   const userText = prompt.trim();
+//   detectedLanguage = detectLang(userText);
 
-  // Unified formatting template
-  const baseFormat = `
-<FORMAT RULES>
-- Keep formatting clean and structured.
-- Use numbered steps (1., 2., 3.).
-- Use bullet points ONLY if steps aren't logical.
-- Max 3 emojis at the end of meaningful sentences.
-- Never bold entire paragraphs or lines, only specific key terms.
-- Always keep text concise and helpful.
-</FORMAT RULES>
-`;
+//   // Unified formatting template
+//   const baseFormat = `
+// <FORMAT RULES>
+// - Keep formatting clean and structured.
+// - Use numbered steps (1., 2., 3.).
+// - Use bullet points ONLY if steps aren't logical.
+// - Max 3 emojis at the end of meaningful sentences.
+// - Never bold entire paragraphs or lines, only specific key terms.
+// - Always keep text concise and helpful.
+// </FORMAT RULES>
+// `;
 
-  const systemPrompt =
-    detectedLanguage === "pt"
-      ? `
-Você é "Barista.Ai", um especialista técnico em café especial.
+//   const systemPrompt =
+//     detectedLanguage === "pt"
+//       ? `
+// Você é "Barista.Ai", um especialista técnico em café especial.
 
-Responda SOMENTE perguntas sobre café.
-Se a pergunta não for sobre café: diga exatamente "Peço desculpas, mas sou especialista apenas em café ☕ e não tenho conhecimento sobre isso."
+// Responda SOMENTE perguntas sobre café.
+// Se a pergunta não for sobre café: diga exatamente "Peço desculpas, mas sou especialista apenas em café ☕ e não tenho conhecimento sobre isso."
 
-${baseFormat}
+// ${baseFormat}
 
-Estrutura da resposta:
-1. **Título**
-2. Uma frase explicando o contexto
-3. Passos numerados claros e diretos
-4. Dica final
-5. Máximo 3 emojis
+// Estrutura da resposta:
+// 1. **Título**
+// 2. Uma frase explicando o contexto
+// 3. Passos numerados claros e diretos
+// 4. Dica final
+// 5. Máximo 3 emojis
 
-Pergunta do usuário: ${userText}
-`
-      : `
-You are "Barista.Ai", a technical expert in specialty coffee.
+// Pergunta do usuário: ${userText}
+// `
+//       : `
+// You are "Barista.Ai", a technical expert in specialty coffee.
 
-ONLY answer coffee-related questions.
-If the question is NOT about coffee: reply exactly "I apologize, but I am a coffee expert ☕ and do not have knowledge about that."
+// ONLY answer coffee-related questions.
+// If the question is NOT about coffee: reply exactly "I apologize, but I am a coffee expert ☕ and do not have knowledge about that."
 
-${baseFormat}
+// ${baseFormat}
 
-Response format:
-1. **Short bold title**
-2. One short explanation sentence
-3. Numbered clear steps
-4. One final tip sentence
-5. Max 3 emojis
+// Response format:
+// 1. **Short bold title**
+// 2. One short explanation sentence
+// 3. Numbered clear steps
+// 4. One final tip sentence
+// 5. Max 3 emojis
 
-User question: ${userText}
-`;
+// User question: ${userText}
+// `;
 
-  try {
-    const res = await axios.post(GEMINI_URL, {
-      contents: [{ role: "user", parts: [{ text: systemPrompt }] }],
-      generationConfig: {
-        temperature: 0.35,
-        maxOutputTokens: 600
-      }
-    });
+//   try {
+//     const res = await axios.post(GEMINI_URL, {
+//       contents: [{ role: "user", parts: [{ text: systemPrompt }] }],
+//       generationConfig: {
+//         temperature: 0.35,
+//         maxOutputTokens: 600
+//       }
+//     });
 
-    const raw = res.data?.candidates?.[0]?.content?.parts?.[0]?.text;
+//     const raw = res.data?.candidates?.[0]?.content?.parts?.[0]?.text;
 
-    return sanitizeResponse(raw);
+//     return sanitizeResponse(raw);
 
-  } catch (err) {
-    console.log("Gemini error:", err?.response?.data || err);
+//   } catch (err) {
+//     console.log("Gemini error:", err?.response?.data || err);
 
-    // ALWAYS English formatted fallback
-    return `
-<strong>⚠️ Connection Issue</strong><br/>
-Unable to reach Barist.Ai — please try again.`;
-  }
-}
+//     // ALWAYS English formatted fallback
+//     return `
+// <strong>⚠️ Connection Issue</strong><br/>
+// Unable to reach Barist.Ai — please try again.`;
+//   }
+// }
 
-module.exports = { getCoffeeAnswer, resetSession };
+// module.exports = { getCoffeeAnswer, resetSession };
+
+
