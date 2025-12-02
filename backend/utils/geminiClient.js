@@ -1540,10 +1540,12 @@
 
 // module.exports = { getCoffeeAnswer, resetSession };
 
+// 
+
 const axios = require("axios");
 
 const MODEL = "models/gemini-2.0-flash";
-const GEMINI_URL = `https://generativelanguage.googleapis.com/v1/${MODEL}:generateContent`;
+const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/${MODEL}:generateContent?key=${process.env.GOOGLE_API_KEY}`;
 
 let detectedLanguage = "en";
 
@@ -1552,23 +1554,20 @@ function resetSession() {
 }
 
 function detectLang(text) {
-  const ptWords = ["como", "fazer", "café", "preparo", "grãos", "moído", "água", "espresso", "filtro"];
-  const enWords = ["how", "make", "coffee", "brew", "beans", "water", "grind", "espresso", "filter"];
+  const ptWords = ["como", "café", "água", "moído", "preparo", "filtro", "grãos"];
+  const enWords = ["how", "make", "coffee", "brew", "water", "grind", "filter"];
 
   const lower = text.toLowerCase();
-
   if (ptWords.some(w => lower.includes(w))) return "pt";
   if (enWords.some(w => lower.includes(w))) return "en";
-
   return detectedLanguage;
 }
 
 function sanitizeResponse(text) {
   if (!text) return "";
-
   return text
-    .replace(/```[\s\S]*?```/g, "") // Remove fenced blocks
-    .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>") // Only convert content inside **
+    .replace(/```[\s\S]*?```/g, "")
+    .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
     .replace(/\n\n/g, "<br/><br/>")
     .replace(/\n/g, "<br/>")
     .trim();
@@ -1584,65 +1583,55 @@ async function getCoffeeAnswer(prompt) {
 Você é "Barista.Ai", assistente virtual especializado em cafés especiais.
 
 REGRAS:
-- Responda SOMENTE perguntas relacionadas a café.
-- Se não for sobre café, responda EXATAMENTE: "Peço desculpas, mas sou especialista apenas em café ☕ e não tenho conhecimento sobre isso."
-- Use sempre Celsius, gramas, ML e proporções corretas (ex.: 1:15).
-- Seja direto, informativo e profissional.
-- Evite cumprimentos ou conversas desnecessárias.
+- Responda SOMENTE perguntas sobre café.
+- Se a pergunta não for sobre café, responda EXATAMENTE: "Peço desculpas, mas sou especialista apenas em café ☕ e não tenho conhecimento sobre isso."
+- Use Celsius, gramas, ML e proporções corretas como 1:15.
+- Seja direto, técnico e profissional.
 </MAIN_INSTRUCTION>
 
 <RESPONSE_FORMAT>
-1. **Título descritivo em negrito**
-2. Uma frase breve explicando o assunto
-3. Passos numerados ou bullets
-4. Dica final curta
+1. **Título**
+2. Uma frase resumo
+3. Passos ou bullets
+4. Dica final
 5. Máximo 3 emojis
 </RESPONSE_FORMAT>
 
-Pergunta do usuário: ${prompt}
+Pergunta: ${prompt}
 `
       : `
 <MAIN_INSTRUCTION>
 You are "Barista.Ai", a virtual assistant specializing in specialty coffee.
 
 RULES:
-- ONLY answer coffee-related questions.
-- If the question is NOT about coffee, reply EXACTLY: "I apologize, but I am a coffee expert ☕ and do not have knowledge about that."
-- Always use Celsius, grams, ML, and proper brew ratios (e.g., 1:15).
-- Be direct, informative, and professional.
-- Avoid greetings or unnecessary conversation.
+- ONLY respond to coffee-related questions.
+- If non-coffee question, respond EXACTLY: "I apologize, but I am a coffee expert ☕ and do not have knowledge about that."
+- Use Celsius, grams, ML, correct brew ratios (ex: 1:15).
+- Be direct, technical, friendly.
 </MAIN_INSTRUCTION>
 
 <RESPONSE_FORMAT>
-1. **Bold descriptive title**
+1. **Bold Title**
 2. One-sentence summary
 3. Numbered steps or bullet points
-4. Final short tip
-5. Maximum of 3 emojis
+4. Final tip
+5. Max 3 emojis
 </RESPONSE_FORMAT>
 
-User question: ${prompt}
+User Question: ${prompt}
 `;
 
   try {
-    const res = await axios.post(
-      GEMINI_URL,
-      {
-        contents: [{ role: "user", parts: [{ text: systemPrompt }] }],
-        generationConfig: { temperature: 0.4, maxOutputTokens: 650 }
-      },
-      {
-        headers: {
-          "Content-Type": "application/json",
-          "x-goog-api-key": process.env.GOOGLE_API_KEY
-        }
-      }
-    );
+    const res = await axios.post(GEMINI_URL, {
+      contents: [
+        { role: "user", parts: [{ text: systemPrompt }] }
+      ]
+    });
 
-    const raw = res.data?.candidates?.[0]?.content?.parts?.[0]?.text;
-    return sanitizeResponse(raw);
+    return sanitizeResponse(res.data?.candidates?.[0]?.content?.parts?.[0]?.text);
   } catch (err) {
-    console.log("Gemini error:", err);
+    console.log("Gemini error:", err?.response?.data || err);
+
     return detectedLanguage === "pt"
       ? "⚠️ Erro ao conectar com Barist.AI — tente novamente."
       : "⚠️ Error connecting to Barist.AI — please try again.";
