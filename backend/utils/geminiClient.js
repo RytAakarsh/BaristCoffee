@@ -1324,106 +1324,247 @@
 // module.exports = { getCoffeeAnswer, resetSession };
 
 
+// const axios = require("axios");
+
+// const MODEL = "models/gemini-2.0-flash";
+// const GEMINI_URL = `https://generativelanguage.googleapis.com/v1/${MODEL}:generateContent`;
+
+// let detectedLanguage = "en"; // default
+
+// function resetSession() {
+//   detectedLanguage = "en";
+// }
+
+
+
+// function detectLang(text) {
+//   const ptWords = [
+//     "me", "fale", "sobre", "método", "como", "fazer", "café", "preparo", 
+//     "grãos", "moído", "água", "espresso", "filtro", "qual", "quando", 
+//     "onde", "porque", "por que", "quanto", "que", "qual", "qualquer",
+//     "chemex", "chernex", "v60", "aero", "press", "french", "press"
+//   ];
+  
+//   const enWords = [
+//     "how", "make", "coffee", "brew", "beans", "water", "grind", 
+//     "espresso", "filter", "what", "when", "where", "why", "which",
+//     "tell", "about", "method", "technique", "recipe"
+//   ];
+
+//   const lower = text.toLowerCase();
+  
+//   // Count matches for each language
+//   const ptCount = ptWords.filter(w => lower.includes(w.toLowerCase())).length;
+//   const enCount = enWords.filter(w => lower.includes(w.toLowerCase())).length;
+  
+//   // More comprehensive detection
+//   if (ptCount > enCount) return "pt";
+//   if (enCount > ptCount) return "en";
+  
+//   // If equal or none, use previous language
+//   return detectedLanguage;
+// }
+
+// async function getCoffeeAnswer(prompt) {
+//   const cleanedPrompt = prompt.trim();
+//   detectedLanguage = detectLang(cleanedPrompt);
+
+//   // ----------------------------------------
+//   // ALWAYS PROCESS QUESTION DIRECTLY
+//   // ----------------------------------------
+// const systemPrompt =
+// detectedLanguage === "pt"
+// ? `
+// <MAIN_INSTRUCTION>
+// Você é "Barista.Ai", assistente especialista em cafés especiais.
+
+// REGRAS:
+// - Para perguntas ou mensagens sobre café → responda usando as regras abaixo.
+// - Para mensagens de saudação (ex.: "Olá", "Oi", "Bom dia", "Boa tarde", "Boa noite") → responda com uma saudação curta e educada antes do conteúdo.
+// - Para mensagens de despedida ou agradecimento (ex.: "Obrigado", "Valeu", "Tchau", "Até mais") → responda educadamente com uma mensagem curta apropriada. Não siga o formato técnico.
+// - Se a mensagem NÃO for café e NÃO for saudação/agradecimento/despedida → responda EXATAMENTE: "Peço desculpas, mas sou especialista apenas em café ☕ e não tenho conhecimento sobre isso."
+
+// FORMATO PARA RESPOSTAS TÉCNICAS SOBRE CAFÉ:
+// 1. **Título em negrito**
+// 2. Uma frase resumo
+// 3. Lista numerada ou bullet points
+// 4. Dica final
+// 5. Máximo 3 emojis
+
+// IMPORTANTE:
+// - Sempre usar Celsius, gramas, ML e proporções (ex.: 1:15).
+// - Seja claro, direto e profissional.
+// </MAIN_INSTRUCTION>
+
+// Mensagem do usuário: ${cleanedPrompt}
+// `
+
+//    : `
+// <MAIN_INSTRUCTION>
+// You are "Barista.Ai", a professional specialty-coffee assistant.
+
+// RULES:
+// - If the message is about coffee → respond using the structured format below.
+// - If the user sends greetings (ex: "Hello", "Hi", "Good morning", "Hey") → respond politely with a short natural greeting before any coffee content if asked later.
+// - If the user sends thanks or goodbye (ex: “Thanks”, “Okay thank you”, “Bye”) → respond politely with a short appropriate closing message (no technical formatting).
+// - If the message is NOT about coffee and NOT a greeting/thank-you → reply EXACTLY with: "I apologize, but I am a coffee expert ☕ and do not have knowledge about that."
+
+// FORMAT FOR COFFEE ANSWERS:
+// 1. **Bold descriptive title**
+// 2. One-sentence summary
+// 3. Numbered steps or bullet points
+// 4. Final short tip
+// 5. Max 3 emojis
+
+// IMPORTANT:
+// - Use Celsius, grams, ML, and correct brew ratios (e.g., 1:15).
+// - Be direct, professional and precise.
+// </MAIN_INSTRUCTION>
+
+// User message: ${cleanedPrompt}
+// `
+// ;
+
+//   try {
+//     const res = await axios.post(
+//       GEMINI_URL,
+//       {
+//         contents: [{ role: "user", parts: [{ text: systemPrompt }] }],
+//         generationConfig: { temperature: 0.35, maxOutputTokens: 650 }
+//       },
+//       {
+//         headers: {
+//           "Content-Type": "application/json",
+//           "x-goog-api-key": process.env.GOOGLE_API_KEY
+//         }
+//       }
+//     );
+
+//     return res.data?.candidates?.[0]?.content?.parts?.[0]?.text || "⚠️ No response.";
+//   } catch (err) {
+//     console.log("Gemini error:", err);
+//     return detectedLanguage === "pt"
+//       ? "⚠️ Erro ao conectar com Barist.AI — tente novamente."
+//       : "⚠️ Error connecting to Barist.AI — please try again.";
+//   }
+// }
+
+// module.exports = { getCoffeeAnswer, resetSession };
+
+
 const axios = require("axios");
 
 const MODEL = "models/gemini-2.0-flash";
 const GEMINI_URL = `https://generativelanguage.googleapis.com/v1/${MODEL}:generateContent`;
 
-let detectedLanguage = "en"; // default
+let detectedLanguage = "en"; 
 
 function resetSession() {
   detectedLanguage = "en";
 }
 
+// --- NEW: Greeting detection ---
+function isGreeting(text, lang) {
+  const ptGreetings = ["oi", "olá", "alo", "alô", "bom dia", "boa tarde", "boa noite"];
+  const ptThanks = ["obrigado", "obrigada", "valeu"];
+  const ptBye = ["tchau", "até mais", "até logo"];
+
+  const enGreetings = ["hi", "hello", "hey", "good morning", "good afternoon", "good evening"];
+  const enThanks = ["thanks", "thank you", "thx"];
+  const enBye = ["bye", "goodbye", "see you"];
+
+  const lower = text.toLowerCase();
+
+  if (lang === "pt") {
+    return [...ptGreetings, ...ptThanks, ...ptBye].some(word => lower.includes(word));
+  } else {
+    return [...enGreetings, ...enThanks, ...enBye].some(word => lower.includes(word));
+  }
+}
 
 
+// --- UPDATED LANGUAGE DETECTION ---
 function detectLang(text) {
+  const lower = text.toLowerCase();
+
+  // explicit greetings override detection
+  const forcePT = ["bom dia", "boa tarde", "boa noite", "obrigado", "obrigada", "olá", "oi"];
+  const forceEN = ["hello", "hi", "thanks", "thank you", "good morning"];
+
+  if (forcePT.some(w => lower.includes(w))) return "pt";
+  if (forceEN.some(w => lower.includes(w))) return "en";
+
   const ptWords = [
+    "café", "preparo", "grãos", "espresso", "água", "moído", 
+    "método", "como", "chemex", "v60", "aero", "press",
     "me", "fale", "sobre", "método", "como", "fazer", "café", "preparo", 
     "grãos", "moído", "água", "espresso", "filtro", "qual", "quando", 
     "onde", "porque", "por que", "quanto", "que", "qual", "qualquer",
     "chemex", "chernex", "v60", "aero", "press", "french", "press"
+
   ];
-  
+
   const enWords = [
-    "how", "make", "coffee", "brew", "beans", "water", "grind", 
+    "coffee", "brew", "beans", "espresso", "water", "method",
+    "how", "recipe", "technique",
+     "how", "make", "coffee", "brew", "beans", "water", "grind", 
     "espresso", "filter", "what", "when", "where", "why", "which",
     "tell", "about", "method", "technique", "recipe"
   ];
 
-  const lower = text.toLowerCase();
-  
-  // Count matches for each language
-  const ptCount = ptWords.filter(w => lower.includes(w.toLowerCase())).length;
-  const enCount = enWords.filter(w => lower.includes(w.toLowerCase())).length;
-  
-  // More comprehensive detection
-  if (ptCount > enCount) return "pt";
-  if (enCount > ptCount) return "en";
-  
-  // If equal or none, use previous language
-  return detectedLanguage;
+  const ptCount = ptWords.filter(w => lower.includes(w)).length;
+  const enCount = enWords.filter(w => lower.includes(w)).length;
+
+  return ptCount > enCount ? "pt" : enCount > ptCount ? "en" : detectedLanguage;
 }
+
 
 async function getCoffeeAnswer(prompt) {
   const cleanedPrompt = prompt.trim();
   detectedLanguage = detectLang(cleanedPrompt);
 
-  // ----------------------------------------
-  // ALWAYS PROCESS QUESTION DIRECTLY
-  // ----------------------------------------
-const systemPrompt =
-detectedLanguage === "pt"
-? `
-<MAIN_INSTRUCTION>
-Você é "Barista.Ai", assistente especialista em cafés especiais.
+  const isGreetingPT = isGreeting(cleanedPrompt, "pt");
+  const isGreetingEN = isGreeting(cleanedPrompt, "en");
+
+  // ---- Apply correct system prompt ----
+  const systemPrompt =
+    detectedLanguage === "pt"
+      ? `
+Você é "Barista.Ai", especialista em cafés especiais.
 
 REGRAS:
-- Para perguntas ou mensagens sobre café → responda usando as regras abaixo.
-- Para mensagens de saudação (ex.: "Olá", "Oi", "Bom dia", "Boa tarde", "Boa noite") → responda com uma saudação curta e educada antes do conteúdo.
-- Para mensagens de despedida ou agradecimento (ex.: "Obrigado", "Valeu", "Tchau", "Até mais") → responda educadamente com uma mensagem curta apropriada. Não siga o formato técnico.
-- Se a mensagem NÃO for café e NÃO for saudação/agradecimento/despedida → responda EXATAMENTE: "Peço desculpas, mas sou especialista apenas em café ☕ e não tenho conhecimento sobre isso."
+- Se a mensagem for sobre café → siga o formato técnico.
+- Se for cumprimento (ex: "Olá", "Bom dia", "Boa noite") → responda com uma saudação curta e amigável.
+- Se for agradecimento ou despedida (ex: "Obrigado", "Tchau") → responda com simpatia e finalize.
+- Se NÃO for café e NÃO for saudação → responda: "Peço desculpas, mas sou especialista apenas em café ☕ e não tenho conhecimento sobre isso."
 
-FORMATO PARA RESPOSTAS TÉCNICAS SOBRE CAFÉ:
-1. **Título em negrito**
-2. Uma frase resumo
-3. Lista numerada ou bullet points
+FORMATO PARA RESPOSTAS SOBRE CAFÉ:
+1. **Título**
+2. Frase curta explicando
+3. Lista numerada ou bullets
 4. Dica final
 5. Máximo 3 emojis
 
-IMPORTANTE:
-- Sempre usar Celsius, gramas, ML e proporções (ex.: 1:15).
-- Seja claro, direto e profissional.
-</MAIN_INSTRUCTION>
-
-Mensagem do usuário: ${cleanedPrompt}
+Mensagem: ${cleanedPrompt}
 `
-
-   : `
-<MAIN_INSTRUCTION>
-You are "Barista.Ai", a professional specialty-coffee assistant.
+      : `
+You are "Barista.Ai", a specialty coffee expert assistant.
 
 RULES:
-- If the message is about coffee → respond using the structured format below.
-- If the user sends greetings (ex: "Hello", "Hi", "Good morning", "Hey") → respond politely with a short natural greeting before any coffee content if asked later.
-- If the user sends thanks or goodbye (ex: “Thanks”, “Okay thank you”, “Bye”) → respond politely with a short appropriate closing message (no technical formatting).
-- If the message is NOT about coffee and NOT a greeting/thank-you → reply EXACTLY with: "I apologize, but I am a coffee expert ☕ and do not have knowledge about that."
+- If the message is about coffee → respond using the structured format.
+- If the user sends a greeting → reply politely with a short warm greeting.
+- If the user sends thanks or goodbye → reply with a friendly short closing message.
+- If message is NOT about coffee and not a greeting → reply: "I apologize, but I am a coffee expert ☕ and do not have knowledge about that."
 
 FORMAT FOR COFFEE ANSWERS:
-1. **Bold descriptive title**
-2. One-sentence summary
-3. Numbered steps or bullet points
-4. Final short tip
+1. **Title**
+2. One sentence summary
+3. Numbered steps or bullets
+4. Final tip
 5. Max 3 emojis
 
-IMPORTANT:
-- Use Celsius, grams, ML, and correct brew ratios (e.g., 1:15).
-- Be direct, professional and precise.
-</MAIN_INSTRUCTION>
-
 User message: ${cleanedPrompt}
-`
-;
+`;
 
   try {
     const res = await axios.post(
@@ -1450,97 +1591,3 @@ User message: ${cleanedPrompt}
 }
 
 module.exports = { getCoffeeAnswer, resetSession };
-
-
-// const axios = require("axios");
-
-// const MODEL = "models/gemini-2.0-pro"; // better streaming support
-// const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:streamGenerateContent`;
-
-// async function getCoffeeAnswer(prompt, uiLanguage = "pt") {
-//   const cleanedPrompt = prompt.trim();
-
-//   const isPortuguese =
-//     uiLanguage === "pt" ||
-//     /[áéíóúãõâêôç]/i.test(cleanedPrompt) ||
-//     /(como|café|método|preparo|grãos|expresso)/i.test(cleanedPrompt);
-
-//   const lang = isPortuguese ? "pt" : "en";
-
-//   const systemPrompt =
-//     lang === "pt"
-//       ? `
-// <MAIN_INSTRUCTION>
-// Você é "Barista.Ai", especialista em café. Responda SOMENTE perguntas relacionadas ao mundo do café.
-// Se a pergunta NÃO for sobre café responda EXATAMENTE: "Peço desculpas, mas sou especialista apenas em café ☕ e não tenho conhecimento sobre isso."
-// Use gramas, ML, Celsius e proporções corretas (ex.: 1:15).
-// Seja direto, útil e profissional. Não faça apresentações, apenas responda.
-// </MAIN_INSTRUCTION>
-
-// <RESPONSE_FORMAT>
-// 1. **Título em negrito**
-// 2. Explicação curta
-// 3. Lista numerada com passos
-// 4. Dica final
-// 5. Máximo 3 emojis
-// </RESPONSE_FORMAT>
-
-// Pergunta do usuário: ${cleanedPrompt}
-// `
-//       : `
-// <MAIN_INSTRUCTION>
-// You are "Barista.Ai", a specialty coffee expert. Only answer coffee-related questions.
-// If the user asks something unrelated, reply EXACTLY: "I apologize, but I am a coffee expert ☕ and do not have knowledge about that."
-// Use Celsius, grams, ML and proper brew ratios (1:15).
-// Be short, direct and professional.
-// </MAIN_INSTRUCTION>
-
-// <RESPONSE_FORMAT>
-// 1. **Bold clear title**
-// 2. Short explanation
-// 3. Numbered brewing steps or bullets
-// 4. Final tip
-// 5. Max 3 emojis
-// </RESPONSE_FORMAT>
-
-// User question: ${cleanedPrompt}
-// `;
-
-//   try {
-//     const response = await fetch(GEMINI_URL + `?key=${process.env.GOOGLE_API_KEY}`, {
-//       method: "POST",
-//       headers: { "Content-Type": "application/json" },
-//       body: JSON.stringify({
-//         contents: [{ role: "user", parts: [{ text: systemPrompt }] }],
-//         generationConfig: { temperature: 0.35, maxOutputTokens: 650, topP: 0.9 }
-//       })
-//     });
-
-//     if (!response.body) throw new Error("Streaming not supported.");
-
-//     const reader = response.body.getReader();
-//     const decoder = new TextDecoder();
-//     let partial = "";
-
-//     return {
-//       stream: true,
-//       async *generator() {
-//         while (true) {
-//           const { value, done } = await reader.read();
-//           if (done) break;
-//           partial += decoder.decode(value);
-//           yield partial;
-//         }
-//         return partial;
-//       }
-//     };
-
-//   } catch (err) {
-//     console.error("Stream error:", err);
-//     return lang === "pt"
-//       ? "⚠️ Erro ao processar. Tente novamente."
-//       : "⚠️ Error processing request — try again.";
-//   }
-// }
-
-// module.exports = { getCoffeeAnswer };
