@@ -533,6 +533,103 @@
 // }
 
 
+// "use client";
+
+// import { useState, useRef, useEffect } from "react";
+// import ChatArea from "@/components/chat/chat-area";
+// import ChatInput from "@/components/chat/chat-input";
+// import Sidebar from "@/components/layout/sidebar";
+// import Header from "@/components/layout/header";
+// import FeedbackPanel from "@/components/feedback/feedback-panel";
+// import { useLanguage } from "@/lib/language-context";
+// import { useAuth } from "@/lib/auth-context";
+// import CoffeeElements from "@/components/decorative/coffee-elements";
+// import HeroSection from "@/components/decorative/hero-section";
+// import { sendChatMessage } from "@/lib/api";
+
+// export default function Home() {
+//   const { user } = useAuth();
+//   const { language } = useLanguage();
+
+//   const [messages, setMessages] = useState<any[]>([]);
+//   const [isLoading, setIsLoading] = useState(false);
+//   const [sessionId, setSessionId] = useState("");
+//   const [showFeedback, setShowFeedback] = useState(false);
+//   const [chatHistory, setChatHistory] = useState<any[]>([]);
+//   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+//   const chatEndRef = useRef<HTMLDivElement>(null);
+
+//   const BACKEND_URL = "https://baristcoffeebackend.onrender.com";
+
+//   useEffect(() => {
+//     fetch(`${BACKEND_URL}/reset-session`, { method: "POST" });
+//     setMessages([]);
+//   }, []);
+
+//   const handleSendMessage = async (msg: string) => {
+//     if (!msg.trim()) return;
+
+//     setMessages(prev => [...prev, { id: Date.now(), text: msg, sender: "user" }]);
+//     setIsLoading(true);
+
+//     try {
+//       const response = await sendChatMessage(msg, language);
+//       const cleaned = typeof response === "string" ? response : response.reply || response.answer;
+
+//       setMessages(prev => [...prev, { id: Date.now() + 1, text: cleaned, sender: "bot" }]);
+//     } catch {
+//       setMessages(prev => [...prev, { id: Date.now() + 1, text: "⚠️ Error — try again.", sender: "bot" }]);
+//     }
+
+//     setIsLoading(false);
+//   };
+
+//   useEffect(() => {
+//     if (messages.length > 0) chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
+//   }, [messages]);
+
+//   return (
+//     <div className="flex h-screen relative overflow-hidden">
+//       <CoffeeElements />
+
+//       <Sidebar
+//         user={user}
+//         history={chatHistory}
+//         onLoadFromHistory={(q) => handleSendMessage(q)}
+//         isOpen={mobileMenuOpen}
+//         setIsOpen={setMobileMenuOpen}
+//       />
+
+//       <div className="flex-1 flex flex-col relative z-10">
+//         <Header isOpen={mobileMenuOpen} setIsOpen={setMobileMenuOpen} />
+
+//         <main className="flex-1 overflow-y-auto">
+//           {messages.length === 0 ? <HeroSection /> : <ChatArea messages={messages} isLoading={isLoading} />}
+//           <div ref={chatEndRef} />
+//         </main>
+
+//         <div className="border-t bg-white">
+//           <ChatInput onSendMessage={handleSendMessage} isLoading={isLoading} />
+//           <button className="w-full py-3 text-white bg-[#704020] font-medium hover:bg-[#59301a]"
+//           onClick={() => setShowFeedback(true)}
+//           >
+          
+          
+          
+//             {language === "pt" ? "✨ Encerrar sessão e enviar feedback" : "✨ End session & give feedback"}
+//           </button>
+//         </div>
+//       </div>
+
+//       {showFeedback && (
+//         <FeedbackPanel onClose={() => setShowFeedback(false)} sessionId={sessionId} />
+//       )}
+//     </div>
+//   );
+// }
+
+
 "use client";
 
 import { useState, useRef, useEffect } from "react";
@@ -553,13 +650,12 @@ export default function Home() {
 
   const [messages, setMessages] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [sessionId, setSessionId] = useState("");
+  const [sessionId] = useState("");
   const [showFeedback, setShowFeedback] = useState(false);
-  const [chatHistory, setChatHistory] = useState<any[]>([]);
+  const [chatHistory] = useState<any[]>([]);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const chatEndRef = useRef<HTMLDivElement>(null);
-
   const BACKEND_URL = "https://baristcoffeebackend.onrender.com";
 
   useEffect(() => {
@@ -567,26 +663,38 @@ export default function Home() {
     setMessages([]);
   }, []);
 
-  const handleSendMessage = async (msg: string) => {
-    if (!msg.trim()) return;
+ const handleSendMessage = async (msg: string) => {
+  if (!msg.trim()) return;
 
-    setMessages(prev => [...prev, { id: Date.now(), text: msg, sender: "user" }]);
-    setIsLoading(true);
+  const userMessage = { id: Date.now(), text: msg, sender: "user" };
+  setMessages(prev => [...prev, userMessage]);
+  setIsLoading(true);
 
-    try {
-      const response = await sendChatMessage(msg, language);
-      const cleaned = typeof response === "string" ? response : response.reply || response.answer;
+  try {
+    const response = await sendChatMessage(msg, language);
 
-      setMessages(prev => [...prev, { id: Date.now() + 1, text: cleaned, sender: "bot" }]);
-    } catch {
-      setMessages(prev => [...prev, { id: Date.now() + 1, text: "⚠️ Error — try again.", sender: "bot" }]);
-    }
+    // ensure clean plain text response
+    const replyText = typeof response === "string"
+      ? response
+      : response?.reply || response?.answer || JSON.stringify(response);
 
-    setIsLoading(false);
-  };
+    const aiMessage = { id: Date.now() + 1, text: replyText, sender: "ai" };
+    setMessages(prev => [...prev, aiMessage]);
 
+  } catch (err) {
+    setMessages(prev => [
+      ...prev,
+      { id: Date.now() + 1, text: "⚠️ Error — try again.", sender: "ai" }
+    ]);
+  }
+
+  setIsLoading(false);
+};
+
+
+  // Auto scroll to latest message
   useEffect(() => {
-    if (messages.length > 0) chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
   return (
@@ -611,20 +719,16 @@ export default function Home() {
 
         <div className="border-t bg-white">
           <ChatInput onSendMessage={handleSendMessage} isLoading={isLoading} />
-          <button className="w-full py-3 text-white bg-[#704020] font-medium hover:bg-[#59301a]"
-          onClick={() => setShowFeedback(true)}
+          <button
+            className="w-full py-3 text-white bg-[#704020] font-medium hover:bg-[#59301a]"
+            onClick={() => setShowFeedback(true)}
           >
-          
-          
-          
             {language === "pt" ? "✨ Encerrar sessão e enviar feedback" : "✨ End session & give feedback"}
           </button>
         </div>
       </div>
 
-      {showFeedback && (
-        <FeedbackPanel onClose={() => setShowFeedback(false)} sessionId={sessionId} />
-      )}
+      {showFeedback && <FeedbackPanel onClose={() => setShowFeedback(false)} sessionId={sessionId} />}
     </div>
   );
 }
