@@ -1324,16 +1324,16 @@
 // module.exports = { getCoffeeAnswer, resetSession };
 
 
-// const axios = require("axios");
+const axios = require("axios");
 
-// const MODEL = "models/gemini-2.0-flash";
-// const GEMINI_URL = `https://generativelanguage.googleapis.com/v1/${MODEL}:generateContent`;
+const MODEL = "models/gemini-2.0-flash";
+const GEMINI_URL = `https://generativelanguage.googleapis.com/v1/${MODEL}:generateContent`;
 
-// let detectedLanguage = "en"; // default
+let detectedLanguage = "en"; // default
 
-// function resetSession() {
-//   detectedLanguage = "en";
-// }
+function resetSession() {
+  detectedLanguage = "en";
+}
 
 // function detectLang(text) {
 //   const ptWords = ["como", "fazer", "café", "preparo", "grãos", "moído", "água", "espresso", "filtro"];
@@ -1347,176 +1347,205 @@
 //   return detectedLanguage;
 // }
 
-// async function getCoffeeAnswer(prompt) {
-//   const cleanedPrompt = prompt.trim();
-//   detectedLanguage = detectLang(cleanedPrompt);
 
-//   // ----------------------------------------
-//   // ALWAYS PROCESS QUESTION DIRECTLY
-//   // ----------------------------------------
-//   const systemPrompt =
-//     detectedLanguage === "pt"
-//       ? `
-// <MAIN_INSTRUCTION>
-// Você é "Barista.Ai", assistente virtual especializado em cafés especiais. Sua missão é fornecer respostas detalhadas, precisas e otimizadas sobre o mundo do café.
+function detectLang(text) {
+  const ptWords = [
+    "me", "fale", "sobre", "método", "como", "fazer", "café", "preparo", 
+    "grãos", "moído", "água", "espresso", "filtro", "qual", "quando", 
+    "onde", "porque", "por que", "quanto", "que", "qual", "qualquer",
+    "chemex", "chernex", "v60", "aero", "press", "french", "press"
+  ];
+  
+  const enWords = [
+    "how", "make", "coffee", "brew", "beans", "water", "grind", 
+    "espresso", "filter", "what", "when", "where", "why", "which",
+    "tell", "about", "method", "technique", "recipe"
+  ];
 
-// REGRAS:
-// - Responda SOMENTE perguntas sobre café.
-// - Se a pergunta NÃO for sobre café, responda EXATAMENTE: "Peço desculpas, mas sou especialista apenas em café ☕ e não tenho conhecimento sobre isso."
-// - Use sempre Celsius, gramas, ML e proporções corretas (ex.: 1:15).
-// - Seja direto, técnico, amigável e profissional.
-// - Não responda com conversas desnecessárias ou cumprimentos.
-// </MAIN_INSTRUCTION>
+  const lower = text.toLowerCase();
+  
+  // Count matches for each language
+  const ptCount = ptWords.filter(w => lower.includes(w.toLowerCase())).length;
+  const enCount = enWords.filter(w => lower.includes(w.toLowerCase())).length;
+  
+  // More comprehensive detection
+  if (ptCount > enCount) return "pt";
+  if (enCount > ptCount) return "en";
+  
+  // If equal or none, use previous language
+  return detectedLanguage;
+}
 
-// <RESPONSE_FORMAT>
-// 1. **Título em negrito**
-// 2. Introdução curta
-// 3. Lista numerada ou bullet points
-// 4. Dica final
-// 5. Máximo de 3 emojis
-// </RESPONSE_FORMAT>
-
-// Pergunta do usuário: ${cleanedPrompt}
-// `
-//       : `
-// <MAIN_INSTRUCTION>
-// You are "Barista.Ai", a virtual assistant specializing in specialty coffee. Your mission is to provide detailed, accurate, and optimized answers about the world of coffee.
-
-// RULES:
-// - ONLY answer coffee-related questions.
-// - If question is NOT about coffee, reply EXACTLY: "I apologize, but I am a coffee expert ☕ and do not have knowledge about that."
-// - Always use Celsius, grams, ML, and proper brew ratios (e.g., 1:15).
-// - Be direct, informative, and professional.
-// - Avoid greetings or unnecessary conversation.
-// </MAIN_INSTRUCTION>
-
-// <RESPONSE_FORMAT>
-// 1. **Bold descriptive title**
-// 2. One-sentence summary
-// 3. Numbered steps or bullet points
-// 4. Final short tip
-// 5. Maximum of 3 emojis
-// </RESPONSE_FORMAT>
-
-// User question: ${cleanedPrompt}
-// `;
-
-//   try {
-//     const res = await axios.post(
-//       GEMINI_URL,
-//       {
-//         contents: [{ role: "user", parts: [{ text: systemPrompt }] }],
-//         generationConfig: { temperature: 0.35, maxOutputTokens: 650 }
-//       },
-//       {
-//         headers: {
-//           "Content-Type": "application/json",
-//           "x-goog-api-key": process.env.GOOGLE_API_KEY
-//         }
-//       }
-//     );
-
-//     return res.data?.candidates?.[0]?.content?.parts?.[0]?.text || "⚠️ No response.";
-//   } catch (err) {
-//     console.log("Gemini error:", err);
-//     return detectedLanguage === "pt"
-//       ? "⚠️ Erro ao conectar com Barist.AI — tente novamente."
-//       : "⚠️ Error connecting to Barist.AI — please try again.";
-//   }
-// }
-
-// module.exports = { getCoffeeAnswer, resetSession };
-
-
-const axios = require("axios");
-
-const MODEL = "models/gemini-2.0-pro"; // better streaming support
-const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:streamGenerateContent`;
-
-async function getCoffeeAnswer(prompt, uiLanguage = "pt") {
+async function getCoffeeAnswer(prompt) {
   const cleanedPrompt = prompt.trim();
+  detectedLanguage = detectLang(cleanedPrompt);
 
-  const isPortuguese =
-    uiLanguage === "pt" ||
-    /[áéíóúãõâêôç]/i.test(cleanedPrompt) ||
-    /(como|café|método|preparo|grãos|expresso)/i.test(cleanedPrompt);
-
-  const lang = isPortuguese ? "pt" : "en";
-
+  // ----------------------------------------
+  // ALWAYS PROCESS QUESTION DIRECTLY
+  // ----------------------------------------
   const systemPrompt =
-    lang === "pt"
+    detectedLanguage === "pt"
       ? `
 <MAIN_INSTRUCTION>
-Você é "Barista.Ai", especialista em café. Responda SOMENTE perguntas relacionadas ao mundo do café.
-Se a pergunta NÃO for sobre café responda EXATAMENTE: "Peço desculpas, mas sou especialista apenas em café ☕ e não tenho conhecimento sobre isso."
-Use gramas, ML, Celsius e proporções corretas (ex.: 1:15).
-Seja direto, útil e profissional. Não faça apresentações, apenas responda.
+Você é "Barista.Ai", assistente virtual especializado em cafés especiais. Sua missão é fornecer respostas detalhadas, precisas e otimizadas sobre o mundo do café.
+
+REGRAS:
+- Responda SOMENTE perguntas sobre café.
+- Se a pergunta NÃO for sobre café, responda EXATAMENTE: "Peço desculpas, mas sou especialista apenas em café ☕ e não tenho conhecimento sobre isso."
+- Use sempre Celsius, gramas, ML e proporções corretas (ex.: 1:15).
+- Seja direto, técnico, amigável e profissional.
+- Não responda com conversas desnecessárias ou cumprimentos.
 </MAIN_INSTRUCTION>
 
 <RESPONSE_FORMAT>
 1. **Título em negrito**
-2. Explicação curta
-3. Lista numerada com passos
+2. Introdução curta
+3. Lista numerada ou bullet points
 4. Dica final
-5. Máximo 3 emojis
+5. Máximo de 3 emojis
 </RESPONSE_FORMAT>
 
 Pergunta do usuário: ${cleanedPrompt}
 `
       : `
 <MAIN_INSTRUCTION>
-You are "Barista.Ai", a specialty coffee expert. Only answer coffee-related questions.
-If the user asks something unrelated, reply EXACTLY: "I apologize, but I am a coffee expert ☕ and do not have knowledge about that."
-Use Celsius, grams, ML and proper brew ratios (1:15).
-Be short, direct and professional.
+You are "Barista.Ai", a virtual assistant specializing in specialty coffee. Your mission is to provide detailed, accurate, and optimized answers about the world of coffee.
+
+RULES:
+- ONLY answer coffee-related questions.
+- If question is NOT about coffee, reply EXACTLY: "I apologize, but I am a coffee expert ☕ and do not have knowledge about that."
+- Always use Celsius, grams, ML, and proper brew ratios (e.g., 1:15).
+- Be direct, informative, and professional.
+- Avoid greetings or unnecessary conversation.
 </MAIN_INSTRUCTION>
 
 <RESPONSE_FORMAT>
-1. **Bold clear title**
-2. Short explanation
-3. Numbered brewing steps or bullets
-4. Final tip
-5. Max 3 emojis
+1. **Bold descriptive title**
+2. One-sentence summary
+3. Numbered steps or bullet points
+4. Final short tip
+5. Maximum of 3 emojis
 </RESPONSE_FORMAT>
 
 User question: ${cleanedPrompt}
 `;
 
   try {
-    const response = await fetch(GEMINI_URL + `?key=${process.env.GOOGLE_API_KEY}`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
+    const res = await axios.post(
+      GEMINI_URL,
+      {
         contents: [{ role: "user", parts: [{ text: systemPrompt }] }],
-        generationConfig: { temperature: 0.35, maxOutputTokens: 650, topP: 0.9 }
-      })
-    });
-
-    if (!response.body) throw new Error("Streaming not supported.");
-
-    const reader = response.body.getReader();
-    const decoder = new TextDecoder();
-    let partial = "";
-
-    return {
-      stream: true,
-      async *generator() {
-        while (true) {
-          const { value, done } = await reader.read();
-          if (done) break;
-          partial += decoder.decode(value);
-          yield partial;
+        generationConfig: { temperature: 0.35, maxOutputTokens: 650 }
+      },
+      {
+        headers: {
+          "Content-Type": "application/json",
+          "x-goog-api-key": process.env.GOOGLE_API_KEY
         }
-        return partial;
       }
-    };
+    );
 
+    return res.data?.candidates?.[0]?.content?.parts?.[0]?.text || "⚠️ No response.";
   } catch (err) {
-    console.error("Stream error:", err);
-    return lang === "pt"
-      ? "⚠️ Erro ao processar. Tente novamente."
-      : "⚠️ Error processing request — try again.";
+    console.log("Gemini error:", err);
+    return detectedLanguage === "pt"
+      ? "⚠️ Erro ao conectar com Barist.AI — tente novamente."
+      : "⚠️ Error connecting to Barist.AI — please try again.";
   }
 }
 
-module.exports = { getCoffeeAnswer };
+module.exports = { getCoffeeAnswer, resetSession };
+
+
+// const axios = require("axios");
+
+// const MODEL = "models/gemini-2.0-pro"; // better streaming support
+// const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:streamGenerateContent`;
+
+// async function getCoffeeAnswer(prompt, uiLanguage = "pt") {
+//   const cleanedPrompt = prompt.trim();
+
+//   const isPortuguese =
+//     uiLanguage === "pt" ||
+//     /[áéíóúãõâêôç]/i.test(cleanedPrompt) ||
+//     /(como|café|método|preparo|grãos|expresso)/i.test(cleanedPrompt);
+
+//   const lang = isPortuguese ? "pt" : "en";
+
+//   const systemPrompt =
+//     lang === "pt"
+//       ? `
+// <MAIN_INSTRUCTION>
+// Você é "Barista.Ai", especialista em café. Responda SOMENTE perguntas relacionadas ao mundo do café.
+// Se a pergunta NÃO for sobre café responda EXATAMENTE: "Peço desculpas, mas sou especialista apenas em café ☕ e não tenho conhecimento sobre isso."
+// Use gramas, ML, Celsius e proporções corretas (ex.: 1:15).
+// Seja direto, útil e profissional. Não faça apresentações, apenas responda.
+// </MAIN_INSTRUCTION>
+
+// <RESPONSE_FORMAT>
+// 1. **Título em negrito**
+// 2. Explicação curta
+// 3. Lista numerada com passos
+// 4. Dica final
+// 5. Máximo 3 emojis
+// </RESPONSE_FORMAT>
+
+// Pergunta do usuário: ${cleanedPrompt}
+// `
+//       : `
+// <MAIN_INSTRUCTION>
+// You are "Barista.Ai", a specialty coffee expert. Only answer coffee-related questions.
+// If the user asks something unrelated, reply EXACTLY: "I apologize, but I am a coffee expert ☕ and do not have knowledge about that."
+// Use Celsius, grams, ML and proper brew ratios (1:15).
+// Be short, direct and professional.
+// </MAIN_INSTRUCTION>
+
+// <RESPONSE_FORMAT>
+// 1. **Bold clear title**
+// 2. Short explanation
+// 3. Numbered brewing steps or bullets
+// 4. Final tip
+// 5. Max 3 emojis
+// </RESPONSE_FORMAT>
+
+// User question: ${cleanedPrompt}
+// `;
+
+//   try {
+//     const response = await fetch(GEMINI_URL + `?key=${process.env.GOOGLE_API_KEY}`, {
+//       method: "POST",
+//       headers: { "Content-Type": "application/json" },
+//       body: JSON.stringify({
+//         contents: [{ role: "user", parts: [{ text: systemPrompt }] }],
+//         generationConfig: { temperature: 0.35, maxOutputTokens: 650, topP: 0.9 }
+//       })
+//     });
+
+//     if (!response.body) throw new Error("Streaming not supported.");
+
+//     const reader = response.body.getReader();
+//     const decoder = new TextDecoder();
+//     let partial = "";
+
+//     return {
+//       stream: true,
+//       async *generator() {
+//         while (true) {
+//           const { value, done } = await reader.read();
+//           if (done) break;
+//           partial += decoder.decode(value);
+//           yield partial;
+//         }
+//         return partial;
+//       }
+//     };
+
+//   } catch (err) {
+//     console.error("Stream error:", err);
+//     return lang === "pt"
+//       ? "⚠️ Erro ao processar. Tente novamente."
+//       : "⚠️ Error processing request — try again.";
+//   }
+// }
+
+// module.exports = { getCoffeeAnswer };
