@@ -1783,7 +1783,7 @@ const WORDS = {
   greetEN: ["hi","hello","hey","good morning","good afternoon","good evening"],
 
   thanksPT: ["obrigado","obrigada","vlw","valeu"],
-  thanksEN: ["thanks","thank you","thx","appreciate"],
+  thanksEN: ["thanks","thank you","thankyou","okay thankyou","thx","appreciate"],
 
   byePT: ["tchau","até mais","até logo"],
   byeEN: ["bye","goodbye","see you","later"],
