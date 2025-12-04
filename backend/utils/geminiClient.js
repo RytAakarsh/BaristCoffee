@@ -1790,17 +1790,7 @@ const WORDS = {
 
   unclear: ["yes","sim","ok","okay","sure","hmm","uh","right"],
 
-//   coffeePT: [
-//     "café","grãos","moer","moído","espresso","expresso","preparo",
-//     "método","torra","torrefação","aeropress","chemex","v60","cafeteira",
-//     "água","proporção","coado","latte","capuccino","extração"
-//   ],
 
-//   coffeeEN: [
-//     "coffee","beans","grind","ground","espresso","brew",
-//     "method","recipe","roast","roasting","aeropress","chemex",
-//     "v60","pour over","ratio","temperature","cold brew","latte","cappuccino"
-//   ]
 coffeePT: [
     "café","grãos","moer","moído","espresso","expresso","preparo","método",
     "torra","torrefação","aeropress","chemex","v60","cafeteira","extração",
@@ -1835,33 +1825,6 @@ function detectLang(text) {
   return detectedLanguage;
 }
 
-// function classify(text) {
-//   const lower = text.toLowerCase();
-
-//   return {
-//     greeting: [...WORDS.greetPT, ...WORDS.greetEN].some(w => lower.includes(w)),
-//     thanks: [...WORDS.thanksPT, ...WORDS.thanksEN].some(w => lower.includes(w)),
-//     goodbye: [...WORDS.byePT, ...WORDS.byeEN].some(w => lower.includes(w)),
-//     unclear: WORDS.unclear.includes(lower),
-//     coffee: [...WORDS.coffeePT, ...WORDS.coffeeEN].some(w => lower.includes(w))
-//   };
-// }
-// function classify(text) {
-//   const lower = text.toLowerCase();
-
-//   return {
-//     greeting: [...WORDS.greetPT, ...WORDS.greetEN].some(w => lower.includes(w)),
-//     thanks: [...WORDS.thanksPT, ...WORDS.thanksEN].some(w => lower.includes(w)),
-//     goodbye: [...WORDS.byePT, ...WORDS.byeEN].some(w => lower.includes(w)),
-//     unclear: WORDS.unclear.includes(lower),
-//     coffee: (
-//       [...WORDS.coffeePT, ...WORDS.coffeeEN].some(w => lower.includes(w)) ||
-//       (lower.includes("which") && lower.includes("coffee")) ||
-//       (lower.includes("who") && lower.includes("coffee")) ||
-//       (lower.includes("largest") && lower.includes("coffee"))
-//     )
-//   };
-// }
 
 function classify(text) {
   const lower = text.toLowerCase();
@@ -1962,9 +1925,8 @@ Siga sempre este formato:
 
 1. **Título**
 2. Resumo curto
-3. Lista numerada ou bullets
-4. Dica final
-5. Máximo 3 emojis
+3. Dica final
+4. Máximo 3 emojis
 `
       : `
 You are Barista.Ai — a professional coffee assistant.  
@@ -1972,17 +1934,19 @@ Always answer in this structure:
 
 1. **Bold title**
 2. Short summary
-3. Numbered steps or bullet points
-4. Final helpful tip
-5. Max 3 emojis
+3. Final helpful tip
+4. Max 3 emojis
 `;
 
   try {
     const res = await axios.post(
       GEMINI_URL,
       {
-        // FIX 1: Corrected the system instruction structure:
-        // Changed 'system_instruction' to 'systemInstruction' and removed the 'role' property.
+    // 3. Lista numerada ou bullets
+  // 3. Numbered steps or bullet points
+        
+
+
         systemInstruction: { parts: [{ text: systemInstruction }] },
         contents: [{ role: "user", parts: [{ text: cleaned }] }],
         generationConfig: { temperature: 0.35 },
