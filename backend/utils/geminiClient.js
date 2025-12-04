@@ -1593,131 +1593,301 @@
 // module.exports = { getCoffeeAnswer, resetSession };
 
 
+// const axios = require("axios");
+
+// const MODEL = "models/gemini-2.0-flash";
+// const GEMINI_URL = `https://generativelanguage.googleapis.com/v1/${MODEL}:generateContent`;
+
+// let detectedLanguage = "en";
+
+// function resetSession() {
+//   detectedLanguage = "en";
+// }
+
+// /* -------------------------------------------
+//    LANGUAGE + CONTEXT DETECTION
+// -------------------------------------------- */
+
+// const WORDS = {
+//   greetPT: ["oi","olá","ola","bom dia","boa tarde","boa noite"],
+//   greetEN: ["hi","hello","hey","good morning","good afternoon","good evening"],
+
+//   thanksPT: ["obrigado","obrigada","vlw","valeu"],
+//   thanksEN: ["thanks","thank you","thx","appreciate"],
+
+//   byePT: ["tchau","até mais","até logo"],
+//   byeEN: ["bye","goodbye","see you","later"],
+
+//   unclear: ["yes","sim","ok","okay","sure","hmm","uh","right"],
+
+//   coffeePT: [
+//     "café","grãos","moer","moído","espresso","expresso","preparo",
+//     "método","torra","torrefação","aeropress","chemex","v60","cafeteira",
+//     "água","proporção","coado","latte","capuccino","extração"
+//   ],
+
+//   coffeeEN: [
+//     "coffee","beans","grind","ground","espresso","brew",
+//     "method","recipe","roast","roasting","aeropress","chemex",
+//     "v60","pour over","ratio","temperature","cold brew","latte","cappuccino"
+//   ]
+// };
+
+// function detectLang(text) {
+//   const lower = text.toLowerCase();
+
+//   if (WORDS.greetPT.concat(WORDS.thanksPT).some(w => lower.includes(w))) return "pt";
+//   if (WORDS.greetEN.concat(WORDS.thanksEN).some(w => lower.includes(w))) return "en";
+
+//   const ptScore = WORDS.coffeePT.filter(w => lower.includes(w)).length;
+//   const enScore = WORDS.coffeeEN.filter(w => lower.includes(w)).length;
+
+//   if (ptScore > enScore) return "pt";
+//   if (enScore > ptScore) return "en";
+
+//   return detectedLanguage;
+// }
+
+// function classify(text) {
+//   const lower = text.toLowerCase();
+
+//   return {
+//     greeting: [...WORDS.greetPT, ...WORDS.greetEN].some(w => lower.includes(w)),
+//     thanks: [...WORDS.thanksPT, ...WORDS.thanksEN].some(w => lower.includes(w)),
+//     goodbye: [...WORDS.byePT, ...WORDS.byeEN].some(w => lower.includes(w)),
+//     unclear: WORDS.unclear.includes(lower),
+//     coffee: [...WORDS.coffeePT, ...WORDS.coffeeEN].some(w => lower.includes(w))
+//   };
+// }
+
+// /* -------------------------------------------
+//    MAIN RESPONSE HANDLER
+// -------------------------------------------- */
+
+// async function getCoffeeAnswer(prompt) {
+//   const cleaned = prompt.trim();
+//   if (!cleaned) return detectedLanguage === "pt" ? "⚠️ Mensagem vazia." : "⚠️ Empty message.";
+
+//   detectedLanguage = detectLang(cleaned);
+//   const intent = classify(cleaned);
+
+//   // Greeting only
+//   if (intent.greeting && !intent.coffee) {
+//     return detectedLanguage === "pt"
+//       ? "☕ Olá! Como posso ajudar com café hoje?"
+//       : "☕ Hello! How can I help with coffee today?";
+//   }
+
+//   // Greeting + question
+//   if (intent.greeting && intent.coffee) {
+//     return detectedLanguage === "pt"
+//       ? "☕ Claro, ótima pergunta! Vamos falar sobre isso…"
+//       : "☕ Great question — let's talk coffee!";
+//   }
+
+//   // Thanks
+//   if (intent.thanks) {
+//     return detectedLanguage === "pt"
+//       ? "😊 De nada! Sempre aqui pra ajudar!"
+//       : "😊 You're welcome! Happy to help!";
+//   }
+
+//   // Goodbye
+//   if (intent.goodbye) {
+//     return detectedLanguage === "pt"
+//       ? "👋 Até mais! Aproveite seu café!"
+//       : "👋 See you next time — enjoy your coffee!";
+//   }
+
+//   // Unclear
+//   if (intent.unclear && !intent.coffee) {
+//     return detectedLanguage === "pt"
+//       ? "☕ Qual dúvida sobre café você gostaria de tirar?"
+//       : "☕ What coffee question would you like to ask?";
+//   }
+
+//   // Not coffee
+//   if (!intent.coffee) {
+//     return detectedLanguage === "pt"
+//       ? "Peço desculpas, mas sou especialista apenas em café ☕ e não tenho conhecimento sobre isso."
+//       : "I’m sorry, but I’m only a coffee expert ☕ and cannot answer that.";
+//   }
+
+//   // SYSTEM INSTRUCTION
+//   const systemInstruction =
+//     detectedLanguage === "pt"
+//       ? `
+// Você é o Barista.Ai — especialista em café.  
+// Siga sempre este formato:
+
+// 1. **Título**
+// 2. Resumo curto
+// 3. Lista numerada ou bullets
+// 4. Dica final
+// 5. Máximo 3 emojis
+// `
+//       : `
+// You are Barista.Ai — a professional coffee assistant.  
+// Always answer in this structure:
+
+// 1. **Bold title**
+// 2. Short summary
+// 3. Numbered steps or bullet points
+// 4. Final helpful tip
+// 5. Max 3 emojis
+// `;
+
+//   try {
+//     const res = await axios.post(
+//       GEMINI_URL,
+//       {
+//         system_instruction: { role: "system", parts: [{ text: systemInstruction }] },
+//         contents: [{ role: "user", parts: [{ text: cleaned }] }],
+//         generationConfig: { temperature: 0.35 },
+//         safetySettings: []
+//       },
+//       { headers: { "Content-Type": "application/json", "x-goog-api-key": process.env.GOOGLE_API_KEY } }
+//     );
+
+//     return res.data?.candidates?.[0]?.content?.parts?.[0]?.text || "⚠️ No response.";
+//   } catch (err) {
+//     console.log("❌ GEMINI ERROR:", err.message);
+//     return detectedLanguage === "pt"
+//       ? "⚠️ Erro ao conectar — tente novamente."
+//       : "⚠️ Error connecting — please try again.";
+//   }
+// }
+
+// module.exports = { getCoffeeAnswer, resetSession };
+
+
 const axios = require("axios");
 
-const MODEL = "models/gemini-2.0-flash";
-const GEMINI_URL = `https://generativelanguage.googleapis.com/v1/${MODEL}:generateContent`;
+// Changed model name from gemini-2.0-flash to the currently supported gemini-2.5-flash
+const MODEL = "gemini-2.5-flash";
+// The URL structure is now based on the model name in the path
+const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent`;
 
 let detectedLanguage = "en";
 
 function resetSession() {
-  detectedLanguage = "en";
+  detectedLanguage = "en";
 }
 
 /* -------------------------------------------
-   LANGUAGE + CONTEXT DETECTION
+   LANGUAGE + CONTEXT DETECTION
 -------------------------------------------- */
 
 const WORDS = {
-  greetPT: ["oi","olá","ola","bom dia","boa tarde","boa noite"],
-  greetEN: ["hi","hello","hey","good morning","good afternoon","good evening"],
+  greetPT: ["oi","olá","ola","bom dia","boa tarde","boa noite"],
+  greetEN: ["hi","hello","hey","good morning","good afternoon","good evening"],
 
-  thanksPT: ["obrigado","obrigada","vlw","valeu"],
-  thanksEN: ["thanks","thank you","thx","appreciate"],
+  thanksPT: ["obrigado","obrigada","vlw","valeu"],
+  thanksEN: ["thanks","thank you","thx","appreciate"],
 
-  byePT: ["tchau","até mais","até logo"],
-  byeEN: ["bye","goodbye","see you","later"],
+  byePT: ["tchau","até mais","até logo"],
+  byeEN: ["bye","goodbye","see you","later"],
 
-  unclear: ["yes","sim","ok","okay","sure","hmm","uh","right"],
+  unclear: ["yes","sim","ok","okay","sure","hmm","uh","right"],
 
-  coffeePT: [
-    "café","grãos","moer","moído","espresso","expresso","preparo",
-    "método","torra","torrefação","aeropress","chemex","v60","cafeteira",
-    "água","proporção","coado","latte","capuccino","extração"
-  ],
+  coffeePT: [
+    "café","grãos","moer","moído","espresso","expresso","preparo",
+    "método","torra","torrefação","aeropress","chemex","v60","cafeteira",
+    "água","proporção","coado","latte","capuccino","extração"
+  ],
 
-  coffeeEN: [
-    "coffee","beans","grind","ground","espresso","brew",
-    "method","recipe","roast","roasting","aeropress","chemex",
-    "v60","pour over","ratio","temperature","cold brew","latte","cappuccino"
-  ]
+  coffeeEN: [
+    "coffee","beans","grind","ground","espresso","brew",
+    "method","recipe","roast","roasting","aeropress","chemex",
+    "v60","pour over","ratio","temperature","cold brew","latte","cappuccino"
+  ]
 };
 
 function detectLang(text) {
-  const lower = text.toLowerCase();
+  const lower = text.toLowerCase();
 
-  if (WORDS.greetPT.concat(WORDS.thanksPT).some(w => lower.includes(w))) return "pt";
-  if (WORDS.greetEN.concat(WORDS.thanksEN).some(w => lower.includes(w))) return "en";
+  if (WORDS.greetPT.concat(WORDS.thanksPT).some(w => lower.includes(w))) return "pt";
+  if (WORDS.greetEN.concat(WORDS.thanksEN).some(w => lower.includes(w))) return "en";
 
-  const ptScore = WORDS.coffeePT.filter(w => lower.includes(w)).length;
-  const enScore = WORDS.coffeeEN.filter(w => lower.includes(w)).length;
+  const ptScore = WORDS.coffeePT.filter(w => lower.includes(w)).length;
+  const enScore = WORDS.coffeeEN.filter(w => lower.includes(w)).length;
 
-  if (ptScore > enScore) return "pt";
-  if (enScore > ptScore) return "en";
+  if (ptScore > enScore) return "pt";
+  if (enScore > ptScore) return "en";
 
-  return detectedLanguage;
+  return detectedLanguage;
 }
 
 function classify(text) {
-  const lower = text.toLowerCase();
+  const lower = text.toLowerCase();
 
-  return {
-    greeting: [...WORDS.greetPT, ...WORDS.greetEN].some(w => lower.includes(w)),
-    thanks: [...WORDS.thanksPT, ...WORDS.thanksEN].some(w => lower.includes(w)),
-    goodbye: [...WORDS.byePT, ...WORDS.byeEN].some(w => lower.includes(w)),
-    unclear: WORDS.unclear.includes(lower),
-    coffee: [...WORDS.coffeePT, ...WORDS.coffeeEN].some(w => lower.includes(w))
-  };
+  return {
+    greeting: [...WORDS.greetPT, ...WORDS.greetEN].some(w => lower.includes(w)),
+    thanks: [...WORDS.thanksPT, ...WORDS.thanksEN].some(w => lower.includes(w)),
+    goodbye: [...WORDS.byePT, ...WORDS.byeEN].some(w => lower.includes(w)),
+    unclear: WORDS.unclear.includes(lower),
+    coffee: [...WORDS.coffeePT, ...WORDS.coffeeEN].some(w => lower.includes(w))
+  };
 }
 
 /* -------------------------------------------
-   MAIN RESPONSE HANDLER
+   MAIN RESPONSE HANDLER
 -------------------------------------------- */
 
 async function getCoffeeAnswer(prompt) {
-  const cleaned = prompt.trim();
-  if (!cleaned) return detectedLanguage === "pt" ? "⚠️ Mensagem vazia." : "⚠️ Empty message.";
+  const cleaned = prompt.trim();
+  if (!cleaned) return detectedLanguage === "pt" ? "⚠️ Mensagem vazia." : "⚠️ Empty message.";
 
-  detectedLanguage = detectLang(cleaned);
-  const intent = classify(cleaned);
+  detectedLanguage = detectLang(cleaned);
+  const intent = classify(cleaned);
 
-  // Greeting only
-  if (intent.greeting && !intent.coffee) {
-    return detectedLanguage === "pt"
-      ? "☕ Olá! Como posso ajudar com café hoje?"
-      : "☕ Hello! How can I help with coffee today?";
-  }
+  // Greeting only
+  if (intent.greeting && !intent.coffee) {
+    return detectedLanguage === "pt"
+      ? "☕ Olá! Como posso ajudar com café hoje?"
+      : "☕ Hello! How can I help with coffee today?";
+  }
 
-  // Greeting + question
-  if (intent.greeting && intent.coffee) {
-    return detectedLanguage === "pt"
-      ? "☕ Claro, ótima pergunta! Vamos falar sobre isso…"
-      : "☕ Great question — let's talk coffee!";
-  }
+  // Greeting + question
+  if (intent.greeting && intent.coffee) {
+    return detectedLanguage === "pt"
+      ? "☕ Claro, ótima pergunta! Vamos falar sobre isso…"
+      : "☕ Great question — let's talk coffee!";
+  }
 
-  // Thanks
-  if (intent.thanks) {
-    return detectedLanguage === "pt"
-      ? "😊 De nada! Sempre aqui pra ajudar!"
-      : "😊 You're welcome! Happy to help!";
-  }
+  // Thanks
+  if (intent.thanks) {
+    return detectedLanguage === "pt"
+      ? "😊 De nada! Sempre aqui pra ajudar!"
+      : "😊 You're welcome! Happy to help!";
+  }
 
-  // Goodbye
-  if (intent.goodbye) {
-    return detectedLanguage === "pt"
-      ? "👋 Até mais! Aproveite seu café!"
-      : "👋 See you next time — enjoy your coffee!";
-  }
+  // Goodbye
+  if (intent.goodbye) {
+    return detectedLanguage === "pt"
+      ? "👋 Até mais! Aproveite seu café!"
+      : "👋 See you next time — enjoy your coffee!";
+  }
 
-  // Unclear
-  if (intent.unclear && !intent.coffee) {
-    return detectedLanguage === "pt"
-      ? "☕ Qual dúvida sobre café você gostaria de tirar?"
-      : "☕ What coffee question would you like to ask?";
-  }
+  // Unclear
+  if (intent.unclear && !intent.coffee) {
+    return detectedLanguage === "pt"
+      ? "☕ Qual dúvida sobre café você gostaria de tirar?"
+      : "☕ What coffee question would you like to ask?";
+  }
 
-  // Not coffee
-  if (!intent.coffee) {
-    return detectedLanguage === "pt"
-      ? "Peço desculpas, mas sou especialista apenas em café ☕ e não tenho conhecimento sobre isso."
-      : "I’m sorry, but I’m only a coffee expert ☕ and cannot answer that.";
-  }
+  // Not coffee
+  if (!intent.coffee) {
+    return detectedLanguage === "pt"
+      ? "Peço desculpas, mas sou especialista apenas em café ☕ e não tenho conhecimento sobre isso."
+      : "I’m sorry, but I’m only a coffee expert ☕ and cannot answer that.";
+  }
 
-  // SYSTEM INSTRUCTION
-  const systemInstruction =
-    detectedLanguage === "pt"
-      ? `
-Você é o Barista.Ai — especialista em café.  
+  // SYSTEM INSTRUCTION
+  const systemInstruction =
+    detectedLanguage === "pt"
+      ? `
+Você é o Barista.Ai — especialista em café.  
 Siga sempre este formato:
 
 1. **Título**
@@ -1726,8 +1896,8 @@ Siga sempre este formato:
 4. Dica final
 5. Máximo 3 emojis
 `
-      : `
-You are Barista.Ai — a professional coffee assistant.  
+      : `
+You are Barista.Ai — a professional coffee assistant.  
 Always answer in this structure:
 
 1. **Bold title**
@@ -1737,25 +1907,27 @@ Always answer in this structure:
 5. Max 3 emojis
 `;
 
-  try {
-    const res = await axios.post(
-      GEMINI_URL,
-      {
-        system_instruction: { role: "system", parts: [{ text: systemInstruction }] },
-        contents: [{ role: "user", parts: [{ text: cleaned }] }],
-        generationConfig: { temperature: 0.35 },
-        safetySettings: []
-      },
-      { headers: { "Content-Type": "application/json", "x-goog-api-key": process.env.GOOGLE_API_KEY } }
-    );
+  try {
+    const res = await axios.post(
+      GEMINI_URL,
+      {
+        // FIX 1: Corrected the system instruction structure:
+        // Changed 'system_instruction' to 'systemInstruction' and removed the 'role' property.
+        systemInstruction: { parts: [{ text: systemInstruction }] },
+        contents: [{ role: "user", parts: [{ text: cleaned }] }],
+        generationConfig: { temperature: 0.35 },
+        safetySettings: []
+      },
+      { headers: { "Content-Type": "application/json", "x-goog-api-key": process.env.GOOGLE_API_KEY } }
+    );
 
-    return res.data?.candidates?.[0]?.content?.parts?.[0]?.text || "⚠️ No response.";
-  } catch (err) {
-    console.log("❌ GEMINI ERROR:", err.message);
-    return detectedLanguage === "pt"
-      ? "⚠️ Erro ao conectar — tente novamente."
-      : "⚠️ Error connecting — please try again.";
-  }
+    return res.data?.candidates?.[0]?.content?.parts?.[0]?.text || "⚠️ No response.";
+  } catch (err) {
+    console.error("❌ GEMINI ERROR:", err.response ? err.response.data : err.message);
+    return detectedLanguage === "pt"
+      ? "⚠️ Erro ao conectar — tente novamente."
+      : "⚠️ Error connecting — please try again.";
+  }
 }
 
 module.exports = { getCoffeeAnswer, resetSession };
