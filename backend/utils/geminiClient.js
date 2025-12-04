@@ -1846,22 +1846,59 @@ function detectLang(text) {
 //     coffee: [...WORDS.coffeePT, ...WORDS.coffeeEN].some(w => lower.includes(w))
 //   };
 // }
+// function classify(text) {
+//   const lower = text.toLowerCase();
+
+//   return {
+//     greeting: [...WORDS.greetPT, ...WORDS.greetEN].some(w => lower.includes(w)),
+//     thanks: [...WORDS.thanksPT, ...WORDS.thanksEN].some(w => lower.includes(w)),
+//     goodbye: [...WORDS.byePT, ...WORDS.byeEN].some(w => lower.includes(w)),
+//     unclear: WORDS.unclear.includes(lower),
+//     coffee: (
+//       [...WORDS.coffeePT, ...WORDS.coffeeEN].some(w => lower.includes(w)) ||
+//       (lower.includes("which") && lower.includes("coffee")) ||
+//       (lower.includes("who") && lower.includes("coffee")) ||
+//       (lower.includes("largest") && lower.includes("coffee"))
+//     )
+//   };
+// }
+
 function classify(text) {
   const lower = text.toLowerCase();
 
+  const isGreeting = [...WORDS.greetPT, ...WORDS.greetEN].some(w => lower === w || lower.startsWith(w + " "));
+  const isThanks = [...WORDS.thanksPT, ...WORDS.thanksEN].some(w => lower.includes(w));
+  const isGoodbye = [...WORDS.byePT, ...WORDS.byeEN].some(w => lower.includes(w));
+  const isUnclearShort = WORDS.unclear.includes(lower);
+
+  // NEW: detect if message is a TRUE question
+  const isQuestion = lower.includes("?") || 
+    lower.startsWith("which") || 
+    lower.startsWith("who") ||
+    lower.startsWith("what") ||
+    lower.startsWith("where") ||
+    lower.startsWith("how") ||
+    lower.startsWith("qual") ||
+    lower.startsWith("quem") ||
+    lower.startsWith("onde") ||
+    lower.startsWith("como") ||
+    lower.startsWith("por que");
+
+  const isCoffeeRelated = (
+    [...WORDS.coffeePT, ...WORDS.coffeeEN].some(w => lower.includes(w)) ||
+    lower.includes("coffee") ||
+    lower.includes("café")
+  );
+
   return {
-    greeting: [...WORDS.greetPT, ...WORDS.greetEN].some(w => lower.includes(w)),
-    thanks: [...WORDS.thanksPT, ...WORDS.thanksEN].some(w => lower.includes(w)),
-    goodbye: [...WORDS.byePT, ...WORDS.byeEN].some(w => lower.includes(w)),
-    unclear: WORDS.unclear.includes(lower),
-    coffee: (
-      [...WORDS.coffeePT, ...WORDS.coffeeEN].some(w => lower.includes(w)) ||
-      (lower.includes("which") && lower.includes("coffee")) ||
-      (lower.includes("who") && lower.includes("coffee")) ||
-      (lower.includes("largest") && lower.includes("coffee"))
-    )
+    greeting: isGreeting && !isQuestion, // prevents mistakes
+    thanks: isThanks,
+    goodbye: isGoodbye,
+    unclear: isUnclearShort && !isQuestion,
+    coffee: isCoffeeRelated
   };
 }
+
 
 /* -------------------------------------------
    MAIN RESPONSE HANDLER
