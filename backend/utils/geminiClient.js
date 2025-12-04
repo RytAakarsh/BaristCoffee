@@ -1925,9 +1925,11 @@ Siga sempre este formato:
 
 1. **Título**
 2. Resumo curto
-3. Lista numerada ou bullets
+3. Liste os pontos principais usando bullets (sem números)
 4. Dica final
 5. Máximo 3 emojis
+
+⚠️ NÃO USE numeração como 1., 2., 3., 4. — apenas bullets.
 `
       : `
 You are Barista.Ai — a professional coffee assistant.  
@@ -1935,9 +1937,11 @@ Always answer in this structure:
 
 1. **Bold title**
 2. Short summary
-3. Numbered steps or bullet points
+3. Present the important points using bullet-style formatting (not numbered)
 4. Final helpful tip
 5. Max 3 emojis
+
+⚠️ DO NOT use numeric formatting like 1., 2., 3. — only bullets.
 `;
 
   try {
