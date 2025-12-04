@@ -1598,84 +1598,98 @@ const axios = require("axios");
 const MODEL = "models/gemini-2.0-flash";
 const GEMINI_URL = `https://generativelanguage.googleapis.com/v1/${MODEL}:generateContent`;
 
-let detectedLanguage = "en"; 
+let detectedLanguage = "en";
 
 function resetSession() {
   detectedLanguage = "en";
 }
 
-// Detect greetings / small talk
-function classifyMessage(text) {
+/* -------------------------------------------
+   1)  LANGUAGE DETECTION
+-------------------------------------------- */
+function detectLang(text) {
   const lower = text.toLowerCase().trim();
 
-  const rules = {
-    pt: {
-      greetings: ["oi", "olá", "alo", "alô", "bom dia", "boa tarde", "boa noite", "e aí"],
-      thanks: ["obrigado", "obrigada", "valeu"],
-      bye: ["tchau", "até mais", "até logo"]
-    },
-    en: {
-      greetings: ["hi", "hello", "hey", "good morning", "good afternoon", "good evening"],
-      thanks: ["thanks", "thank you", "thx"],
-      bye: ["bye", "goodbye", "see you"]
-    }
+  const pt = [
+    "café","grãos","espresso","preparo","como","qual","torra","água","cafeteira",
+    "bom dia","boa tarde","boa noite","obrigado","obrigada"
+  ];
+
+  const en = [
+    "coffee","brew","beans","espresso","how","what","roast","water","brewer",
+    "hi","hello","thanks","thank you"
+  ];
+
+  if (pt.some(w => lower.includes(w))) return "pt";
+  if (en.some(w => lower.includes(w))) return "en";
+
+  return detectedLanguage;
+}
+
+/* -------------------------------------------
+   2)  MESSAGE TYPE CLASSIFICATION
+-------------------------------------------- */
+
+function classify(text) {
+  const lower = text.toLowerCase().trim();
+
+  // greetings
+  const greetingsPT = ["oi", "olá", "bom dia", "boa tarde", "boa noite"];
+  const greetingsEN = ["hi", "hello", "hey", "good morning", "good afternoon", "good evening"];
+
+  // thanks
+  const thanksPT = ["obrigado", "obrigada", "valeu"];
+  const thanksEN = ["thanks", "thank you", "thx"];
+
+  // farewell
+  const byePT = ["tchau", "até mais", "até logo"];
+  const byeEN = ["bye", "goodbye", "see you"];
+
+  // short unclear replies
+  const unclearWords = ["yes", "sim", "ok", "okay", "sure", "hum", "hmm", "okey"];
+
+  return {
+    isGreeting: [...greetingsPT, ...greetingsEN].includes(lower),
+    isThanks: [...thanksPT, ...thanksEN].includes(lower),
+    isGoodbye: [...byePT, ...byeEN].includes(lower),
+    isUnclear: unclearWords.includes(lower)
   };
-
-  const type = {
-    greetingPT: rules.pt.greetings.some(w => lower.includes(w)),
-    thanksPT: rules.pt.thanks.some(w => lower.includes(w)),
-    byePT: rules.pt.bye.some(w => lower.includes(w)),
-    greetingEN: rules.en.greetings.some(w => lower.includes(w)),
-    thanksEN: rules.en.thanks.some(w => lower.includes(w)),
-    byeEN: rules.en.bye.some(w => lower.includes(w))
-  };
-
-  return type;
 }
 
-// Detect user language
-function detectLang(text) {
-  const lower = text.toLowerCase();
-
-  const ptHints = ["café", "torra", "moído", "água", "espresso", "preparo"];
-  const enHints = ["coffee", "brew", "beans", "grind", "water", "espresso"];
-
-  if (ptHints.some(w => lower.includes(w))) return "pt";
-  if (enHints.some(w => lower.includes(w))) return "en";
-
-  return detectedLanguage; // keep previous context
-}
-
-// Normalize response safely
-function extractResponse(data) {
-  return (
-    data?.candidates?.[0]?.content?.parts?.[0]?.text?.trim() ||
-    data?.candidates?.[0]?.content?.parts?.[0]?.text ||
-    null
-  );
-}
+/* -------------------------------------------
+   3)  MAIN RESPONSE HANDLER
+-------------------------------------------- */
 
 async function getCoffeeAnswer(prompt) {
-  if (!prompt.trim()) return detectedLanguage === "pt" ? "⚠️ Mensagem vazia." : "⚠️ Empty message.";
+  const cleaned = prompt.trim();
+  if (!cleaned) return detectedLanguage === "pt" ? "⚠️ Mensagem vazia." : "⚠️ Empty message.";
 
-  const cleanedPrompt = prompt.trim();
-  detectedLanguage = detectLang(cleanedPrompt);
+  detectedLanguage = detectLang(cleaned);
+  const msg = classify(cleaned);
 
-  const intent = classifyMessage(cleanedPrompt);
+  // Quick responses
+  if (msg.isGreeting) 
+    return detectedLanguage === "pt"
+      ? "☕ Olá! Como posso ajudar com café hoje?"
+      : "☕ Hello! How can I help you with coffee today?";
 
-  // Greeting responses
-  if (intent.greetingPT) return "☕ Olá! Como posso ajudar com algo sobre café?";
-  if (intent.greetingEN) return "☕ Hello! How can I help you with coffee today?";
+  if (msg.isThanks)
+    return detectedLanguage === "pt"
+      ? "😊 De nada! Sempre aqui para ajudar!"
+      : "😊 You're welcome! Happy to help!";
 
-  // Thanks responses
-  if (intent.thanksPT) return "😊 De nada! Sempre feliz em ajudar com café!";
-  if (intent.thanksEN) return "😊 You're welcome! Happy to help!";
+  if (msg.isGoodbye)
+    return detectedLanguage === "pt"
+      ? "👋 Até mais! Aproveite seu café!"
+      : "👋 Goodbye! Enjoy your coffee!";
 
-  // Goodbye responses
-  if (intent.byePT) return "👋 Até mais! Tenha um ótimo café!";
-  if (intent.byeEN) return "👋 Goodbye! Enjoy your coffee!";
+  // If unclear message (like "yes", "sim", "ok")
+  if (msg.isUnclear)
+    return detectedLanguage === "pt"
+      ? "☕ Só pra confirmar — qual é a sua pergunta sobre café?"
+      : "☕ Just to confirm — what coffee question would you like to ask?";
 
-  // SYSTEM PROMPT FOR REAL COFFEE QUESTIONS
+  /* ----- Build system prompt for real coffee questions ----- */
   const systemPrompt =
     detectedLanguage === "pt"
       ? `
@@ -1683,34 +1697,34 @@ Você é "Barista.Ai", especialista em cafés especiais ☕.
 
 REGRAS:
 - Responda SOMENTE perguntas relacionadas a café.
-- Se NÃO estiver relacionado a café → diga: "Peço desculpas, mas sou especialista apenas em café ☕ e não tenho conhecimento sobre isso."
-- Seja direto, educado e preciso.
+- Se NÃO for sobre café → responda: "Peço desculpas, mas sou especialista apenas em café ☕ e não tenho conhecimento sobre isso."
+- Seja técnico, amigável e claro.
 
-FORMATO:
+FORMATO DA RESPOSTA:
 1. **Título**
-2. Frase explicativa curta
+2. Breve resumo
 3. Lista numerada ou bullet points
 4. Dica final
 5. Máximo 3 emojis
 
-Mensagem: ${cleanedPrompt}
+Pergunta: "${cleaned}"
 `
       : `
-You are "Barista.Ai", a specialty coffee professional assistant ☕.
+You are "Barista.Ai", a specialty coffee assistant ☕.
 
 RULES:
 - Only answer coffee-related questions.
-- If message is NOT about coffee → reply: "I apologize, but I am a coffee expert ☕ and do not have knowledge about that."
-- Be clear, helpful and professional.
+- If NOT related → reply: "I apologize, but I am a coffee expert ☕ and do not have knowledge about that."
+- Be expert, friendly and clear.
 
-FORMAT:
-1. **Bold descriptive title**
-2. One-sentence summary
-3. Numbered steps or bullet points
+RESPONSE FORMAT:
+1. **Bold title**
+2. Short summary
+3. Numbered steps or bullets
 4. Final tip
 5. Max 3 emojis
 
-User message: ${cleanedPrompt}
+User question: "${cleaned}"
 `;
 
   try {
@@ -1718,10 +1732,7 @@ User message: ${cleanedPrompt}
       GEMINI_URL,
       {
         contents: [{ role: "user", parts: [{ text: systemPrompt }] }],
-        generationConfig: {
-          temperature: 0.35,
-          maxOutputTokens: 650
-        }
+        generationConfig: { temperature: 0.35, maxOutputTokens: 650 }
       },
       {
         headers: {
@@ -1731,13 +1742,13 @@ User message: ${cleanedPrompt}
       }
     );
 
-    const final = extractResponse(response.data);
-
-    return final || (detectedLanguage === "pt" ? "⚠️ Sem resposta." : "⚠️ No response.");
+    return (
+      response?.data?.candidates?.[0]?.content?.parts?.[0]?.text?.trim() ||
+      (detectedLanguage === "pt" ? "⚠️ Sem resposta." : "⚠️ No response.")
+    );
 
   } catch (err) {
-    console.log("❌ Gemini error:", err?.message);
-
+    console.log("❌ Gemini API error:", err.message);
     return detectedLanguage === "pt"
       ? "⚠️ Erro ao conectar — tente novamente."
       : "⚠️ Error connecting — please try again.";
