@@ -1346,119 +1346,6 @@
 // }
 
 
-// "use client";
-
-// import { useLanguage } from "@/lib/language-context";
-// import { useEffect, useState } from "react";
-// import { Clipboard, ClipboardCheck } from "lucide-react";
-
-// export default function ChatArea({ messages, isLoading }) {
-//   const { language } = useLanguage();
-//   const [copiedId, setCopiedId] = useState<string | null>(null);
-//   const [displayText, setDisplayText] = useState<Record<string, string>>({});
-
-//   // STREAMING EFFECT
-//   useEffect(() => {
-//     const latest = messages[messages.length - 1];
-//     if (!latest || latest.sender !== "ai") return;
-
-//     const fullText = String(latest.text);
-//     let i = 0;
-
-//     const interval = setInterval(() => {
-//       i++;
-//       setDisplayText((prev) => ({
-//         ...prev,
-//         [latest.id]: fullText.slice(0, i),
-//       }));
-
-//       if (i >= fullText.length) clearInterval(interval);
-//     }, 20);
-
-//     return () => clearInterval(interval);
-//   }, [messages]);
-
-//   const formatText = (text: string) =>
-//     text
-//       .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
-//       .replace(/(\d+)\.(?!\s)/g, "$1. ")
-//       .replace(/^\* /gm, "• ")
-//       .replace(/\n\n/g, "<br/><br/>")
-//       .replace(/\n/g, "<br/>")
-//       .trim();
-
-//   const copyMessage = (raw: string, id: string) => {
-//     navigator.clipboard.writeText(raw.replace(/<[^>]+>/g, ""));
-//     setCopiedId(id);
-//     setTimeout(() => setCopiedId(null), 1500);
-//   };
-
-//   return (
-//     <div className="flex-1 overflow-y-auto overflow-x-hidden p-6 lg:p-8 space-y-6">
-
-//       {messages.length === 0 ? (
-//         <div className="flex flex-col items-center opacity-90 text-center">
-//           <h2 className="text-4xl font-serif font-bold mb-3">
-//             {language === "pt" ? "Bem-vindo ao Barist.Ai" : "Welcome to Barist.Ai"}
-//           </h2>
-//           <p className="text-lg max-w-xl">
-//             {language === "pt"
-//               ? "Pergunte qualquer coisa sobre café, preparo ou grãos."
-//               : "Ask anything about coffee, brewing or beans."}
-//           </p>
-//         </div>
-//       ) : (
-       
-//   {messages.map((msg) => {
-//   const rendered = msg.sender === "ai" ? displayText[msg.id] || "" : msg.text;
-
-//   return (
-//     <div 
-//       key={msg.id} 
-//       className={`flex relative ${msg.sender === "user" ? "justify-end" : "justify-start"}`}
-//     >
-
-//       <div
-//         className={`relative max-w-lg px-5 py-4 rounded-2xl text-[18px] leading-relaxed whitespace-pre-wrap shadow-md
-//         ${msg.sender === "user"
-//           ? "bg-gradient-to-r from-primary to-primary/80 text-white rounded-br-none"
-//           : "bg-white border rounded-bl-none"}
-//         `}
-//         dangerouslySetInnerHTML={{ __html: formatText(rendered) }}
-//       />
-
-//       {/* Copy button aligned perfectly */}
-//       <button
-//         onClick={() => copyMessage(msg.text, msg.id)}
-//         className={`absolute -bottom-4 p-1.5 bg-white/80 backdrop-blur-lg rounded-full shadow-sm border border-gray-200 
-//         hover:scale-110 active:scale-95 transition-all ${msg.sender === "user" ? "right-2" : "left-2"}`}
-//         style={{ transform: "translateY(50%)" }}
-//       >
-//         {copiedId === msg.id ? (
-//           <ClipboardCheck size={17} className="text-green-600" />
-//         ) : (
-//           <Clipboard size={17} className="text-gray-600" />
-//         )}
-//       </button>
-
-//     </div>
-//   );
-// })}
-
-      
-
-//       {isLoading && (
-//         <div className="flex gap-2">
-//           <div className="animate-bounce w-3 h-3 bg-primary rounded-full" />
-//           <div className="animate-bounce w-3 h-3 bg-primary rounded-full delay-100" />
-//           <div className="animate-bounce w-3 h-3 bg-primary rounded-full delay-200" />
-//         </div>
-//       )}
-//     </div>
-//   );
-// }
-
-
 "use client";
 
 import { useLanguage } from "@/lib/language-context";
@@ -1508,6 +1395,7 @@ export default function ChatArea({ messages, isLoading }) {
 
   return (
     <div className="flex-1 overflow-y-auto overflow-x-hidden p-6 lg:p-8 space-y-6">
+
       {messages.length === 0 ? (
         <div className="flex flex-col items-center opacity-90 text-center">
           <h2 className="text-4xl font-serif font-bold mb-3">
@@ -1519,49 +1407,48 @@ export default function ChatArea({ messages, isLoading }) {
               : "Ask anything about coffee, brewing or beans."}
           </p>
         </div>
-      ) : (
-        //  FIXED: WRAPPED WITH PARENTHESIS
-        <>
-          {messages.map((msg) => {
-            const rendered = msg.sender === "ai" ? displayText[msg.id] || "" : msg.text;
+  ) : (
+    <>
+      {messages.map((msg) => {
+  const rendered = msg.sender === "ai" ? displayText[msg.id] || "" : msg.text;
 
-            return (
-              <div
-                key={msg.id}
-                className={`flex relative ${msg.sender === "user" ? "justify-end" : "justify-start"}`}
-              >
-                <div
-                  className={`relative max-w-lg px-5 py-4 rounded-2xl text-[18px] leading-relaxed whitespace-pre-wrap shadow-md
-                  ${
-                    msg.sender === "user"
-                      ? "bg-gradient-to-r from-primary to-primary/80 text-white rounded-br-none"
-                      : "bg-white border rounded-bl-none"
-                  }`}
-                  dangerouslySetInnerHTML={{ __html: formatText(rendered) }}
-                />
+  return (
+    <div 
+      key={msg.id} 
+      className={`flex relative mb-10 ${msg.sender === "user" ? "justify-end" : "justify-start"}`} // ⬅️ Added mb-10
+    >
 
-                {/* Copy Button */}
-                <button
-                  onClick={() => copyMessage(msg.text, msg.id)}
-                  className={`absolute -bottom-4 p-1.5 bg-white/80 backdrop-blur-lg rounded-full shadow-sm border border-gray-200 
-                  hover:scale-110 active:scale-95 transition-all ${
-                    msg.sender === "user" ? "right-2" : "left-2"
-                  }`}
-                  style={{ transform: "translateY(50%)" }}
-                >
-                  {copiedId === msg.id ? (
-                    <ClipboardCheck size={17} className="text-green-600" />
-                  ) : (
-                    <Clipboard size={17} className="text-gray-600" />
-                  )}
-                </button>
-              </div>
-            );
-          })}
-        </>
-      )}
+      <div
+        className={`relative max-w-lg px-5 py-4 rounded-2xl text-[18px] leading-relaxed whitespace-pre-wrap shadow-md
+        ${msg.sender === "user"
+          ? "bg-gradient-to-r from-primary to-primary/80 text-white rounded-br-none"
+          : "bg-white border rounded-bl-none"}`}
+        dangerouslySetInnerHTML={{ __html: formatText(rendered) }}
+      />
 
-      {isLoading && (
+      {/* NEW improved copy button */}
+      <button
+        onClick={() => copyMessage(msg.text, msg.id)}
+        className={`absolute -bottom-8 z-20 p-2.5 bg-white/90 backdrop-blur-xl rounded-full shadow-md border border-gray-300 
+        hover:scale-110 active:scale-95 transition-all duration-200
+        ${msg.sender === "user" ? "right-3" : "left-3"}`}
+        style={{ transform: "translateY(50%)" }}
+      >
+        {copiedId === msg.id ? (
+          <ClipboardCheck size={22} className="text-green-600" /> // bigger icon
+        ) : (
+          <Clipboard size={22} className="text-gray-600" />
+        )}
+      </button>
+
+    </div>
+  );
+})}
+
+  </>
+)}
+
+{isLoading && (
         <div className="flex gap-2">
           <div className="animate-bounce w-3 h-3 bg-primary rounded-full" />
           <div className="animate-bounce w-3 h-3 bg-primary rounded-full delay-100" />
@@ -1571,3 +1458,7 @@ export default function ChatArea({ messages, isLoading }) {
     </div>
   );
 }
+
+
+
+
