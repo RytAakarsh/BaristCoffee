@@ -1608,41 +1608,39 @@ function resetSession() {
    LANGUAGE + CONTEXT DETECTION
 -------------------------------------------- */
 
-const DICTIONARY = {
-  greetingsPT: ["oi","olá","ola","bom dia","boa tarde","boa noite","saudações"],
-  greetingsEN: ["hi","hello","hey","good morning","good afternoon","good evening"],
-  
-  thanksPT: ["obrigado","obrigada","valeu","agradeço"],
-  thanksEN: ["thanks","thank you","thx","appreciate it"],
+const WORDS = {
+  greetPT: ["oi","olá","ola","bom dia","boa tarde","boa noite"],
+  greetEN: ["hi","hello","hey","good morning","good afternoon","good evening"],
 
-  byePT: ["tchau","até mais","até logo","falou"],
+  thanksPT: ["obrigado","obrigada","vlw","valeu"],
+  thanksEN: ["thanks","thank you","thx","appreciate"],
+
+  byePT: ["tchau","até mais","até logo"],
   byeEN: ["bye","goodbye","see you","later"],
 
-  unclear: ["yes","sim","ok","okay","sure","hmm","uh","yes please","maybe"],
+  unclear: ["yes","sim","ok","okay","sure","hmm","uh","right"],
 
-  ptCoffeeWords: [
-    "café","grãos","moer","moído","filtro","espresso","preparo","receita",
-    "método","torra","torrado","torrefação","aeropress","chemex","v60","cafeteira",
-    "água","proporção","extração","expresso","latte","capuccino","coado"
+  coffeePT: [
+    "café","grãos","moer","moído","espresso","expresso","preparo",
+    "método","torra","torrefação","aeropress","chemex","v60","cafeteira",
+    "água","proporção","coado","latte","capuccino","extração"
   ],
 
-  enCoffeeWords: [
-    "coffee","beans","grind","ground","filter","espresso","brew","method",
-    "recipe","roast","roasting","aeropress","chemex","v60","machine","latte",
-    "cappuccino","extraction","ratio","temperature","pour over","cold brew"
+  coffeeEN: [
+    "coffee","beans","grind","ground","espresso","brew",
+    "method","recipe","roast","roasting","aeropress","chemex",
+    "v60","pour over","ratio","temperature","cold brew","latte","cappuccino"
   ]
 };
 
 function detectLang(text) {
   const lower = text.toLowerCase();
 
-  if (DICTIONARY.greetingsPT.some(w => lower.includes(w)) || DICTIONARY.thanksPT.some(w => lower.includes(w)))
-    return "pt";
-  if (DICTIONARY.greetingsEN.some(w => lower.includes(w)) || DICTIONARY.thanksEN.some(w => lower.includes(w)))
-    return "en";
+  if (WORDS.greetPT.concat(WORDS.thanksPT).some(w => lower.includes(w))) return "pt";
+  if (WORDS.greetEN.concat(WORDS.thanksEN).some(w => lower.includes(w))) return "en";
 
-  const ptScore = DICTIONARY.ptCoffeeWords.filter(w => lower.includes(w)).length;
-  const enScore = DICTIONARY.enCoffeeWords.filter(w => lower.includes(w)).length;
+  const ptScore = WORDS.coffeePT.filter(w => lower.includes(w)).length;
+  const enScore = WORDS.coffeeEN.filter(w => lower.includes(w)).length;
 
   if (ptScore > enScore) return "pt";
   if (enScore > ptScore) return "en";
@@ -1654,115 +1652,106 @@ function classify(text) {
   const lower = text.toLowerCase();
 
   return {
-    isGreeting: [...DICTIONARY.greetingsPT, ...DICTIONARY.greetingsEN].some(w => lower.includes(w)),
-    isThanks: [...DICTIONARY.thanksPT, ...DICTIONARY.thanksEN].some(w => lower.includes(w)),
-    isGoodbye: [...DICTIONARY.byePT, ...DICTIONARY.byeEN].some(w => lower.includes(w)),
-    isCoffee: [...DICTIONARY.ptCoffeeWords, ...DICTIONARY.enCoffeeWords].some(w => lower.includes(w)),
-    isUnclear: DICTIONARY.unclear.includes(lower)
+    greeting: [...WORDS.greetPT, ...WORDS.greetEN].some(w => lower.includes(w)),
+    thanks: [...WORDS.thanksPT, ...WORDS.thanksEN].some(w => lower.includes(w)),
+    goodbye: [...WORDS.byePT, ...WORDS.byeEN].some(w => lower.includes(w)),
+    unclear: WORDS.unclear.includes(lower),
+    coffee: [...WORDS.coffeePT, ...WORDS.coffeeEN].some(w => lower.includes(w))
   };
 }
 
 /* -------------------------------------------
-   MAIN FUNCTION
+   MAIN RESPONSE HANDLER
 -------------------------------------------- */
 
 async function getCoffeeAnswer(prompt) {
   const cleaned = prompt.trim();
-  if (!cleaned) {
-    return detectedLanguage === "pt" ? "⚠️ Mensagem vazia." : "⚠️ Empty message.";
-  }
+  if (!cleaned) return detectedLanguage === "pt" ? "⚠️ Mensagem vazia." : "⚠️ Empty message.";
 
   detectedLanguage = detectLang(cleaned);
   const intent = classify(cleaned);
 
-  // 🟢 Greeting ONLY
-  if (intent.isGreeting && !intent.isCoffee) {
-    return detectedLanguage === "pt" 
+  // Greeting only
+  if (intent.greeting && !intent.coffee) {
+    return detectedLanguage === "pt"
       ? "☕ Olá! Como posso ajudar com café hoje?"
-      : "☕ Hello! How can I help you with coffee today?";
+      : "☕ Hello! How can I help with coffee today?";
   }
 
-  // 🟢 Combined greeting + question (e.g., "Olá, como faço café?")
-  if (intent.isGreeting && intent.isCoffee) {
+  // Greeting + question
+  if (intent.greeting && intent.coffee) {
     return detectedLanguage === "pt"
-      ? "☕ Claro! Vamos falar sobre café… pode me dizer sua dúvida?"
-      : "☕ Of course! Let's talk coffee — what's your question?";
+      ? "☕ Claro, ótima pergunta! Vamos falar sobre isso…"
+      : "☕ Great question — let's talk coffee!";
   }
 
-  // 🟢 Thanks
-  if (intent.isThanks) {
+  // Thanks
+  if (intent.thanks) {
     return detectedLanguage === "pt"
-      ? "😊 De nada! Sempre aqui para ajudar!"
+      ? "😊 De nada! Sempre aqui pra ajudar!"
       : "😊 You're welcome! Happy to help!";
   }
 
-  // 🟢 Goodbye
-  if (intent.isGoodbye) {
+  // Goodbye
+  if (intent.goodbye) {
     return detectedLanguage === "pt"
-      ? "👋 Até a próxima! Aproveite seu café!"
+      ? "👋 Até mais! Aproveite seu café!"
       : "👋 See you next time — enjoy your coffee!";
   }
 
-  // 🟡 Unclear message (ex: "yes", "sim", "ok")
-  if (intent.isUnclear && !intent.isCoffee) {
+  // Unclear
+  if (intent.unclear && !intent.coffee) {
     return detectedLanguage === "pt"
-      ? "☕ Pode repetir? Não entendi. Qual é sua pergunta sobre café?"
-      : "☕ Could you repeat? What would you like to ask about coffee?";
+      ? "☕ Qual dúvida sobre café você gostaria de tirar?"
+      : "☕ What coffee question would you like to ask?";
   }
 
-  // 🔴 Not coffee
-  if (!intent.isCoffee) {
+  // Not coffee
+  if (!intent.coffee) {
     return detectedLanguage === "pt"
       ? "Peço desculpas, mas sou especialista apenas em café ☕ e não tenho conhecimento sobre isso."
-      : "I apologize, but I am a coffee expert ☕ and do not have knowledge about that.";
+      : "I’m sorry, but I’m only a coffee expert ☕ and cannot answer that.";
   }
 
-  // 🧠 REAL AI RESPONSE
-  const systemPrompt = detectedLanguage === "pt" ? `
-Você é "Barista.Ai", especialista em café ☕. 
-Responda sempre de forma estruturada:
+  // SYSTEM INSTRUCTION
+  const systemInstruction =
+    detectedLanguage === "pt"
+      ? `
+Você é o Barista.Ai — especialista em café.  
+Siga sempre este formato:
 
 1. **Título**
 2. Resumo curto
-3. Passos ou pontos importantes
+3. Lista numerada ou bullets
 4. Dica final
 5. Máximo 3 emojis
-
-Pergunta: "${cleaned}"
-` : `
-You are "Barista.Ai", a coffee specialist ☕.
-
-Respond structured:
+`
+      : `
+You are Barista.Ai — a professional coffee assistant.  
+Always answer in this structure:
 
 1. **Bold title**
 2. Short summary
-3. Steps or bullet points
-4. Final tip
+3. Numbered steps or bullet points
+4. Final helpful tip
 5. Max 3 emojis
-
-User question: "${cleaned}"
 `;
 
   try {
     const res = await axios.post(
       GEMINI_URL,
       {
-        contents: [{ role: "user", parts: [{ text: systemPrompt }] }],
+        system_instruction: { role: "system", parts: [{ text: systemInstruction }] },
+        contents: [{ role: "user", parts: [{ text: cleaned }] }],
         generationConfig: { temperature: 0.35 },
-        safetySettings: [] // prevents rejection
+        safetySettings: []
       },
-      {
-        headers: {
-          "Content-Type": "application/json",
-          "x-goog-api-key": process.env.GOOGLE_API_KEY
-        }
-      }
+      { headers: { "Content-Type": "application/json", "x-goog-api-key": process.env.GOOGLE_API_KEY } }
     );
 
     return res.data?.candidates?.[0]?.content?.parts?.[0]?.text || "⚠️ No response.";
-
   } catch (err) {
-    console.error("❌ Gemini error:", err.message);
+    console.log("❌ GEMINI ERROR:", err.message);
     return detectedLanguage === "pt"
       ? "⚠️ Erro ao conectar — tente novamente."
       : "⚠️ Error connecting — please try again.";
