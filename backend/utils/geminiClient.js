@@ -1597,265 +1597,150 @@ const axios = require("axios");
 
 const MODEL = "models/gemini-2.0-flash";
 const GEMINI_URL = `https://generativelanguage.googleapis.com/v1/${MODEL}:generateContent`;
-let detectedLanguage = "en";
+
+let detectedLanguage = "en"; 
 
 function resetSession() {
   detectedLanguage = "en";
 }
 
-// Improved language detection
-function detectLang(text) {
+// Detect greetings / small talk
+function classifyMessage(text) {
   const lower = text.toLowerCase().trim();
-  
-  // Special greetings that clearly indicate language
-  const ptGreetings = ["olá", "oi", "bom dia", "boa tarde", "boa noite", "olá!", "oi!"];
-  const enGreetings = ["hi", "hello", "hey", "good morning", "good afternoon", "good evening"];
-  
-  if (ptGreetings.some(g => lower === g || lower.startsWith(g))) return "pt";
-  if (enGreetings.some(g => lower === g || lower.startsWith(g))) return "en";
-  
-  // Common coffee terms
-  const ptCoffeeWords = [
-    "café", "grãos", "moer", "moído", "filtro", "espresso", "preparo",
-    "método", "chemex", "v60", "aero", "press", "french press",
-    "torra", "torrado", "torrefação", "sabor", "aroma", "extração",
-    "água", "temperatura", "proporção", "mocha", "capuccino", "latte",
-    "máquina", "cafeteira", "coador", "prensa", "italiana"
-  ];
-  
-  const enCoffeeWords = [
-    "coffee", "beans", "grind", "ground", "filter", "espresso", "brew",
-    "method", "chemex", "v60", "aeropress", "french press", "roast",
-    "roasting", "flavor", "aroma", "extraction", "water", "temperature",
-    "ratio", "mocha", "cappuccino", "latte", "machine", "brewer", "drip",
-    "pour over", "cold brew"
-  ];
-  
-  // Count matches
-  const ptMatches = ptCoffeeWords.filter(word => 
-    lower.includes(word) || 
-    lower.split(/\s+/).some(w => w === word || w.startsWith(word))
-  ).length;
-  
-  const enMatches = enCoffeeWords.filter(word => 
-    lower.includes(word) ||
-    lower.split(/\s+/).some(w => w === word || w.startsWith(word))
-  ).length;
-  
-  // Check for language-specific question words
-  if (lower.includes("como") || lower.includes("qual") || lower.includes("quando") || 
-      lower.includes("onde") || lower.includes("por que") || lower.includes("quanto")) {
-    ptMatches += 2;
-  }
-  
-  if (lower.includes("how") || lower.includes("what") || lower.includes("when") ||
-      lower.includes("where") || lower.includes("why") || lower.includes("which")) {
-    enMatches += 2;
-  }
-  
-  if (ptMatches > enMatches) return "pt";
-  if (enMatches > ptMatches) return "en";
-  
-  // Default to last detected language
-  return detectedLanguage;
+
+  const rules = {
+    pt: {
+      greetings: ["oi", "olá", "alo", "alô", "bom dia", "boa tarde", "boa noite", "e aí"],
+      thanks: ["obrigado", "obrigada", "valeu"],
+      bye: ["tchau", "até mais", "até logo"]
+    },
+    en: {
+      greetings: ["hi", "hello", "hey", "good morning", "good afternoon", "good evening"],
+      thanks: ["thanks", "thank you", "thx"],
+      bye: ["bye", "goodbye", "see you"]
+    }
+  };
+
+  const type = {
+    greetingPT: rules.pt.greetings.some(w => lower.includes(w)),
+    thanksPT: rules.pt.thanks.some(w => lower.includes(w)),
+    byePT: rules.pt.bye.some(w => lower.includes(w)),
+    greetingEN: rules.en.greetings.some(w => lower.includes(w)),
+    thanksEN: rules.en.thanks.some(w => lower.includes(w)),
+    byeEN: rules.en.bye.some(w => lower.includes(w))
+  };
+
+  return type;
 }
 
-// Check if it's a greeting
-function isGreeting(text) {
-  const lower = text.toLowerCase().trim();
-  const greetings = [
-    "oi", "olá", "bom dia", "boa tarde", "boa noite",
-    "hi", "hello", "hey", "good morning", "good afternoon", "good evening",
-    "tchau", "até mais", "bye", "goodbye", "see you",
-    "obrigado", "obrigada", "thanks", "thank you", "thx", "thank"
-  ];
-  
-  return greetings.some(g => 
-    lower === g || 
-    lower.startsWith(g + " ") || 
-    lower.endsWith(" " + g) ||
-    lower.includes(" " + g + " ")
+// Detect user language
+function detectLang(text) {
+  const lower = text.toLowerCase();
+
+  const ptHints = ["café", "torra", "moído", "água", "espresso", "preparo"];
+  const enHints = ["coffee", "brew", "beans", "grind", "water", "espresso"];
+
+  if (ptHints.some(w => lower.includes(w))) return "pt";
+  if (enHints.some(w => lower.includes(w))) return "en";
+
+  return detectedLanguage; // keep previous context
+}
+
+// Normalize response safely
+function extractResponse(data) {
+  return (
+    data?.candidates?.[0]?.content?.parts?.[0]?.text?.trim() ||
+    data?.candidates?.[0]?.content?.parts?.[0]?.text ||
+    null
   );
 }
 
 async function getCoffeeAnswer(prompt) {
+  if (!prompt.trim()) return detectedLanguage === "pt" ? "⚠️ Mensagem vazia." : "⚠️ Empty message.";
+
   const cleanedPrompt = prompt.trim();
-  
-  // Debug logging
-  console.log("Processing prompt:", cleanedPrompt);
-  
-  // Detect language
   detectedLanguage = detectLang(cleanedPrompt);
-  console.log("Detected language:", detectedLanguage);
-  
-  // Check if it's a greeting
-  const greeting = isGreeting(cleanedPrompt);
-  
-  // Build system prompt based on language
-  let systemPrompt;
-  
-  if (detectedLanguage === "pt") {
-    systemPrompt = `
-Você é o "Barista.Ai", um assistente virtual especializado exclusivamente em café.
 
-REGRAS DE RESPOSTA:
-1. SE for uma saudação (como "oi", "bom dia", etc.): Responda com uma saudação amigável e curta sobre café.
-2. SE for sobre café: Responda no formato estruturado abaixo.
-3. SE for um agradecimento ou despedida: Responda educadamente.
-4. SE NÃO for sobre café: Responda EXATAMENTE: "Peço desculpas, mas sou especialista apenas em café ☕ e não tenho conhecimento sobre isso."
+  const intent = classifyMessage(cleanedPrompt);
 
-FORMATO PARA RESPOSTAS SOBRE CAFÉ:
-**Título descritivo**
-Breve introdução sobre o tópico.
+  // Greeting responses
+  if (intent.greetingPT) return "☕ Olá! Como posso ajudar com algo sobre café?";
+  if (intent.greetingEN) return "☕ Hello! How can I help you with coffee today?";
 
-1. Primeiro ponto importante
-2. Segundo ponto importante
-3. Terceiro ponto importante
+  // Thanks responses
+  if (intent.thanksPT) return "😊 De nada! Sempre feliz em ajudar com café!";
+  if (intent.thanksEN) return "😊 You're welcome! Happy to help!";
 
-💡 Dica final para melhorar o preparo.
+  // Goodbye responses
+  if (intent.byePT) return "👋 Até mais! Tenha um ótimo café!";
+  if (intent.byeEN) return "👋 Goodbye! Enjoy your coffee!";
 
-Pergunta: "${cleanedPrompt}"
+  // SYSTEM PROMPT FOR REAL COFFEE QUESTIONS
+  const systemPrompt =
+    detectedLanguage === "pt"
+      ? `
+Você é "Barista.Ai", especialista em cafés especiais ☕.
+
+REGRAS:
+- Responda SOMENTE perguntas relacionadas a café.
+- Se NÃO estiver relacionado a café → diga: "Peço desculpas, mas sou especialista apenas em café ☕ e não tenho conhecimento sobre isso."
+- Seja direto, educado e preciso.
+
+FORMATO:
+1. **Título**
+2. Frase explicativa curta
+3. Lista numerada ou bullet points
+4. Dica final
+5. Máximo 3 emojis
+
+Mensagem: ${cleanedPrompt}
+`
+      : `
+You are "Barista.Ai", a specialty coffee professional assistant ☕.
+
+RULES:
+- Only answer coffee-related questions.
+- If message is NOT about coffee → reply: "I apologize, but I am a coffee expert ☕ and do not have knowledge about that."
+- Be clear, helpful and professional.
+
+FORMAT:
+1. **Bold descriptive title**
+2. One-sentence summary
+3. Numbered steps or bullet points
+4. Final tip
+5. Max 3 emojis
+
+User message: ${cleanedPrompt}
 `;
-  } else {
-    systemPrompt = `
-You are "Barista.Ai", a virtual assistant specializing exclusively in coffee.
-
-RESPONSE RULES:
-1. IF it's a greeting (like "hi", "hello", etc.): Reply with a friendly, short coffee-related greeting.
-2. IF it's about coffee: Respond using the structured format below.
-3. IF it's a thank you or goodbye: Reply politely.
-4. IF it's NOT about coffee: Reply EXACTLY: "I apologize, but I am a coffee expert ☕ and do not have knowledge about that."
-
-FORMAT FOR COFFEE ANSWERS:
-**Descriptive Title**
-Brief summary about the topic.
-
-1. First important point
-2. Second important point
-3. Third important point
-
-💡 Final tip to improve your brew.
-
-Question: "${cleanedPrompt}"
-`;
-  }
 
   try {
-    console.log("Calling Gemini API...");
-    
-    // Check if API key exists
-    if (!process.env.GOOGLE_API_KEY) {
-      console.error("GOOGLE_API_KEY is missing!");
-      return detectedLanguage === "pt" 
-        ? "⚠️ Erro de configuração: Chave da API não encontrada. Contate o suporte."
-        : "⚠️ Configuration error: API key not found. Please contact support.";
-    }
-    
-    const res = await axios.post(
+    const response = await axios.post(
       GEMINI_URL,
       {
-        contents: [{
-          role: "user",
-          parts: [{ text: systemPrompt }]
-        }],
+        contents: [{ role: "user", parts: [{ text: systemPrompt }] }],
         generationConfig: {
           temperature: 0.35,
-          maxOutputTokens: 650,
-          topP: 0.95,
-          topK: 40
-        },
-        safetySettings: [
-          {
-            category: "HARM_CATEGORY_HARASSMENT",
-            threshold: "BLOCK_NONE"
-          },
-          {
-            category: "HARM_CATEGORY_HATE_SPEECH",
-            threshold: "BLOCK_NONE"
-          }
-        ]
+          maxOutputTokens: 650
+        }
       },
       {
         headers: {
           "Content-Type": "application/json",
           "x-goog-api-key": process.env.GOOGLE_API_KEY
-        },
-        timeout: 30000, // 30 second timeout
-        validateStatus: function (status) {
-          return status >= 200 && status < 500; // Accept 4xx for better error handling
         }
       }
     );
 
-    console.log("Gemini API response status:", res.status);
-    
-    // Handle different response statuses
-    if (res.status === 200) {
-      const text = res.data?.candidates?.[0]?.content?.parts?.[0]?.text;
-      if (text) {
-        console.log("Successfully got response");
-        return text;
-      } else {
-        console.log("No text in response:", JSON.stringify(res.data, null, 2));
-        return detectedLanguage === "pt"
-          ? "⚠️ O Barist.Ai respondeu, mas sem conteúdo. Tente novamente."
-          : "⚠️ Barist.Ai responded but with no content. Please try again.";
-      }
-    } else if (res.status === 401 || res.status === 403) {
-      console.error("API Key error:", res.data);
-      return detectedLanguage === "pt"
-        ? "⚠️ Erro de autenticação: Verifique sua chave da API Google."
-        : "⚠️ Authentication error: Please check your Google API key.";
-    } else if (res.status === 429) {
-      console.error("Rate limit exceeded:", res.data);
-      return detectedLanguage === "pt"
-        ? "⚠️ Muitas requisições. Aguarde um momento e tente novamente."
-        : "⚠️ Too many requests. Please wait a moment and try again.";
-    } else if (res.status === 400) {
-      console.error("Bad request:", res.data);
-      return detectedLanguage === "pt"
-        ? "⚠️ Erro na solicitação. Verifique sua pergunta e tente novamente."
-        : "⚠️ Request error. Please check your question and try again.";
-    } else {
-      console.error("Unexpected error:", res.status, res.data);
-      return detectedLanguage === "pt"
-        ? "⚠️ Erro inesperado ao conectar com Barist.AI. Tente novamente em alguns instantes."
-        : "⚠️ Unexpected error connecting to Barist.AI. Please try again in a moment.";
-    }
-  } catch (err) {
-    // Detailed error logging
-    console.error("Gemini API call failed:", {
-      name: err.name,
-      message: err.message,
-      code: err.code,
-      config: {
-        url: err.config?.url,
-        method: err.config?.method,
-        timeout: err.config?.timeout
-      }
-    });
+    const final = extractResponse(response.data);
 
-    // Network/timeout errors
-    if (err.code === 'ECONNABORTED') {
-      return detectedLanguage === "pt"
-        ? "⚠️ Tempo limite excedido. O servidor está demorando para responder."
-        : "⚠️ Request timeout. The server is taking too long to respond.";
-    } else if (err.code === 'ENOTFOUND' || err.code === 'ECONNREFUSED') {
-      return detectedLanguage === "pt"
-        ? "⚠️ Não foi possível conectar ao servidor. Verifique sua conexão com a internet."
-        : "⚠️ Cannot connect to server. Please check your internet connection.";
-    } else if (err.response) {
-      // Server responded with error
-      console.error("Server error response:", err.response.status, err.response.data);
-      return detectedLanguage === "pt"
-        ? `⚠️ Erro do servidor (${err.response.status}). Tente novamente.`
-        : `⚠️ Server error (${err.response.status}). Please try again.`;
-    } else {
-      // Unknown error
-      return detectedLanguage === "pt"
-        ? "⚠️ Erro ao conectar com Barist.AI. Tente novamente ou contate o suporte."
-        : "⚠️ Error connecting to Barist.AI. Please try again or contact support.";
-    }
+    return final || (detectedLanguage === "pt" ? "⚠️ Sem resposta." : "⚠️ No response.");
+
+  } catch (err) {
+    console.log("❌ Gemini error:", err?.message);
+
+    return detectedLanguage === "pt"
+      ? "⚠️ Erro ao conectar — tente novamente."
+      : "⚠️ Error connecting — please try again.";
   }
 }
 
