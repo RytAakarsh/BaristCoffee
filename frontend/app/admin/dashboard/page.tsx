@@ -423,7 +423,7 @@ export default function AdminDashboard({ token }) {
         </Chart>
 
         {/* Brazilian States Chart */}
-        <Chart title="% by Brazilian States">
+        {/* <Chart title="% by Brazilian States">
           <ResponsiveContainer width="100%" height={300}>
             <BarChart 
               data={[...stateData].sort((a, b) => b.value - a.value)}
@@ -440,7 +440,37 @@ export default function AdminDashboard({ token }) {
               </Bar>
             </BarChart>
           </ResponsiveContainer>
-        </Chart>
+        </Chart> */}
+        {/* % by Brazilian States (Improved UI – Hide Zero Rows & Larger Bars) */}
+<Chart title="% by Brazilian States">
+  <ResponsiveContainer width="100%" height={Math.max(250, stateData.filter(s => s.value > 0).length * 45)}>
+    <BarChart
+      data={[...stateData.filter(s => s.value > 0)].sort((a, b) => b.value - a.value)}
+      layout="vertical"
+      margin={{ top: 20, right: 30, left: 60, bottom: 20 }}
+      barCategoryGap={20}
+    >
+      <XAxis type="number" />
+      <YAxis 
+        dataKey="name" 
+        type="category" 
+        width={80} 
+        tick={{ fontSize: 14 }} 
+      />
+      <Tooltip />
+      <Bar 
+        dataKey="value" 
+        radius={[5, 5, 5, 5]} 
+        barSize={28} // ⬅️ Thicker bars
+      >
+        {[...stateData.filter(s => s.value > 0)].map((_, i) => (
+          <Cell key={i} fill={COLORS[i % COLORS.length]} />
+        ))}
+      </Bar>
+    </BarChart>
+  </ResponsiveContainer>
+</Chart>
+
 
         {/* NEW Country Chart */}
         <Chart title="% by Countries">
