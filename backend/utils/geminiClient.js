@@ -1851,8 +1851,8 @@ async function getCoffeeAnswer(prompt) {
   // Greeting + question
   if (intent.greeting && intent.coffee) {
     return detectedLanguage === "pt"
-      ? "☕ Claro, ótima pergunta! Vamos falar sobre isso…"
-      : "☕ Great question — let's talk coffee!";
+      ? "☕ Prazer em conhecê-lo(a) — vamos tomar um café! Pode repetir sua pergunta, por favor?"
+      : "☕ Nice to meet you — let's talk coffee! can you please repeat your question?";
   }
 
   // Thanks
