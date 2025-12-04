@@ -1790,17 +1790,34 @@ const WORDS = {
 
   unclear: ["yes","sim","ok","okay","sure","hmm","uh","right"],
 
-  coffeePT: [
-    "café","grãos","moer","moído","espresso","expresso","preparo",
-    "método","torra","torrefação","aeropress","chemex","v60","cafeteira",
-    "água","proporção","coado","latte","capuccino","extração"
-  ],
+//   coffeePT: [
+//     "café","grãos","moer","moído","espresso","expresso","preparo",
+//     "método","torra","torrefação","aeropress","chemex","v60","cafeteira",
+//     "água","proporção","coado","latte","capuccino","extração"
+//   ],
 
-  coffeeEN: [
-    "coffee","beans","grind","ground","espresso","brew",
-    "method","recipe","roast","roasting","aeropress","chemex",
-    "v60","pour over","ratio","temperature","cold brew","latte","cappuccino"
-  ]
+//   coffeeEN: [
+//     "coffee","beans","grind","ground","espresso","brew",
+//     "method","recipe","roast","roasting","aeropress","chemex",
+//     "v60","pour over","ratio","temperature","cold brew","latte","cappuccino"
+//   ]
+coffeePT: [
+    "café","grãos","moer","moído","espresso","expresso","preparo","método",
+    "torra","torrefação","aeropress","chemex","v60","cafeteira","extração",
+    "água","proporção","coado","latte","capuccino","origem","produção",
+    "produtor","plantação","fazenda","arábica","robusta","qualidade",
+    "história do café","maior produtor","exportação","brasil","colômbia",
+    "etiópia","torrefadora","safra"
+  ],
+
+  coffeeEN: [
+    "coffee","beans","grind","ground","espresso","brew","method","recipe",
+    "roast","roasting","aeropress","chemex","v60","pour over","ratio",
+    "temperature","cold brew","latte","cappuccino","origin","producer",
+    "production","largest coffee producer","country","farm","plantation",
+    "arabica","robusta","quality","coffee history","export","roastery",
+    "brazil","colombia","ethiopia","harvest","processing"
+  ]
 };
 
 function detectLang(text) {
@@ -1818,16 +1835,32 @@ function detectLang(text) {
   return detectedLanguage;
 }
 
-function classify(text) {
-  const lower = text.toLowerCase();
+// function classify(text) {
+//   const lower = text.toLowerCase();
 
-  return {
-    greeting: [...WORDS.greetPT, ...WORDS.greetEN].some(w => lower.includes(w)),
-    thanks: [...WORDS.thanksPT, ...WORDS.thanksEN].some(w => lower.includes(w)),
-    goodbye: [...WORDS.byePT, ...WORDS.byeEN].some(w => lower.includes(w)),
-    unclear: WORDS.unclear.includes(lower),
-    coffee: [...WORDS.coffeePT, ...WORDS.coffeeEN].some(w => lower.includes(w))
-  };
+//   return {
+//     greeting: [...WORDS.greetPT, ...WORDS.greetEN].some(w => lower.includes(w)),
+//     thanks: [...WORDS.thanksPT, ...WORDS.thanksEN].some(w => lower.includes(w)),
+//     goodbye: [...WORDS.byePT, ...WORDS.byeEN].some(w => lower.includes(w)),
+//     unclear: WORDS.unclear.includes(lower),
+//     coffee: [...WORDS.coffeePT, ...WORDS.coffeeEN].some(w => lower.includes(w))
+//   };
+// }
+function classify(text) {
+  const lower = text.toLowerCase();
+
+  return {
+    greeting: [...WORDS.greetPT, ...WORDS.greetEN].some(w => lower.includes(w)),
+    thanks: [...WORDS.thanksPT, ...WORDS.thanksEN].some(w => lower.includes(w)),
+    goodbye: [...WORDS.byePT, ...WORDS.byeEN].some(w => lower.includes(w)),
+    unclear: WORDS.unclear.includes(lower),
+    coffee: (
+      [...WORDS.coffeePT, ...WORDS.coffeeEN].some(w => lower.includes(w)) ||
+      (lower.includes("which") && lower.includes("coffee")) ||
+      (lower.includes("who") && lower.includes("coffee")) ||
+      (lower.includes("largest") && lower.includes("coffee"))
+    )
+  };
 }
 
 /* -------------------------------------------
