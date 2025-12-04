@@ -1595,9 +1595,8 @@
 
 const axios = require("axios");
 
-const MODEL = "models/gemini-2.0-flash-exp";
+const MODEL = "models/gemini-2.0-flash";
 const GEMINI_URL = `https://generativelanguage.googleapis.com/v1/${MODEL}:generateContent`;
-
 let detectedLanguage = "en";
 
 function resetSession() {
