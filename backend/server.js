@@ -83,13 +83,30 @@ dotenv.config();
 const app = express();
 
 // CORS
+// app.use(
+//   cors({
+//     origin: "*", // change this when deploying
+//     methods: "GET,POST,PUT,DELETE",
+//     allowedHeaders: "Content-Type, Authorization",
+//   })
+// );
+
 app.use(
   cors({
-    origin: "*", // change this when deploying
-    methods: "GET,POST,PUT,DELETE",
-    allowedHeaders: "Content-Type, Authorization",
+    origin: [
+      "https://mvp.baristai.online",
+      "http://localhost:3000"
+    ],
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+    credentials: true
   })
 );
+
+/* IMPORTANT for preflight */
+app.options("*", cors());
+
+app.use(express.json());
 
 app.use(express.json());
 
