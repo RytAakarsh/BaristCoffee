@@ -1699,7 +1699,7 @@ export default function AdminDashboard({ token }) {
 
       {/* HEADER */}
       <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-serif font-bold">Analytics Dashboard</h1>
+        <h1 className="text-3xl font-serif font-bold">Analytics121 Dashboard</h1>
         <button
           onClick={handleLogout}
           className="px-5 py-2 bg-black text-white rounded-lg hover:bg-red-600 transition"
@@ -1762,7 +1762,7 @@ export default function AdminDashboard({ token }) {
           </ResponsiveContainer>
         </Chart>
 
-        
+
         <Chart title="Age Groups">
           <ResponsiveContainer width="100%" height={270}>
             <BarChart data={ageGroups}>
