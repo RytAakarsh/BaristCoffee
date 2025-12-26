@@ -308,10 +308,23 @@ export default function AdminDashboard({ token }) {
     count: feedback.filter(f => Number(f.stars) === star).length
   }));
 
-  const genderStats = ["Male", "Female", "Other"].map(type => ({
-    name: type,
-    value: feedback.filter(f => f.sex === type).length
-  }));
+  // const genderStats = ["Male", "Female", "Other"].map(type => ({
+  //   name: type,
+  //   value: feedback.filter(f => f.sex === type).length
+  // }));
+
+   const totalGenderCount = feedback.length;
+
+  const genderStats = ["Male", "Female", "Other"].map(type => {
+    const count = feedback.filter(f => f.sex === type).length;
+    return {
+      name: type,
+      value: count,
+      percentage: totalGenderCount
+        ? ((count / totalGenderCount) * 100).toFixed(1)
+        : 0
+    };
+  });
 
   const ageGroups = [
     { label: "18–25", range: [18,25] },
@@ -402,7 +415,7 @@ export default function AdminDashboard({ token }) {
           </ResponsiveContainer>
         </Chart>
 
-        <Chart title="Gender Distribution">
+        {/* <Chart title="Gender Distribution">
           <ResponsiveContainer width="100%" height={270}>
             <PieChart>
               <Pie data={genderStats} dataKey="value" nameKey="name" label>
@@ -411,7 +424,32 @@ export default function AdminDashboard({ token }) {
               <Tooltip />
             </PieChart>
           </ResponsiveContainer>
-        </Chart>
+        </Chart> */}
+
+         <Chart title="Gender Distribution">
+                  <ResponsiveContainer width="100%" height={270}>
+                    <PieChart>
+                      <Pie
+                        data={genderStats}
+                        dataKey="value"
+                        nameKey="name"
+                        label={({ name, percentage }) => `${name}: ${percentage}%`}
+                      >
+                        {genderStats.map((_, i) => (
+                          <Cell key={i} fill={COLORS[i]} />
+                        ))}
+                      </Pie>
+        
+                      <Tooltip
+                        formatter={(value, name, props) => {
+                          const { percentage } = props.payload;
+                          return [`${value} (${percentage}%)`, name];
+                        }}
+                      />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </Chart>
+        
 
         <Chart title="Age Groups">
           <ResponsiveContainer width="100%" height={270}>
