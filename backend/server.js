@@ -163,7 +163,7 @@ app.use(cors({
 }));
 
 // Handle preflight for ALL routes
-app.options('*', cors()); // This should be BEFORE other middleware
+app.options('/*', cors()); // This should be BEFORE other middleware
 
 app.use(express.json());
 
